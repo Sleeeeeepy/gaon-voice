@@ -53,7 +53,7 @@ export default class Room {
         return this._audioLevelObserver;
     }
 
-    public getNumUser() {
+    public get size() {
         return this.peers.size;
     }
 

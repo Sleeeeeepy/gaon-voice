@@ -158,7 +158,7 @@ export default class Controller {
             let room = this.getRoomOrThrow(roomId);
             let user = this.getUserOrThrow(roomId, userId);
             user.close();
-            if (room.getNumUser() === 0) {
+            if (room.size === 0) {
                 room.close();
             }
             return true;
