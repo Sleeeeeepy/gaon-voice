@@ -11,7 +11,6 @@ import * as config from "./config";
 import Peer from "./peer";
 import { Direction, TransportType } from "./type";
 import { WorkerManager } from "./worker";
-import { CurrentContext } from "./context";
 
 export default class Room {
     private _roomId: string;
@@ -93,8 +92,8 @@ export default class Room {
         this.peers.set(peer.userId, peer);
         peer.onClose = () => {
             this.deletePeer(peer.userId);
-            let ctx = CurrentContext.getInstance();
-            ctx.peers.delete(peer.userId);
+            //let ctx = CurrentContext.getInstance();
+            //ctx.peers.delete(peer.userId);
         }
     }
 

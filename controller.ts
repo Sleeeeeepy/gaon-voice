@@ -1,4 +1,4 @@
-import { Context, CurrentContext } from "./context";
+import { Context } from "./context";
 import Peer from "./peer";
 import Room from "./room";
 import * as config from "./config";
@@ -11,16 +11,9 @@ export default class Controller {
     private context: Context;
     public constructor(context: Context) {
         this.context = context;
-        if (!context.rooms) {
-            context.rooms = new Map<string, Room>();
-        }
-
-        if (!context.peers) {
-            context.peers = new Map<number, Peer>();
-        }
     }
 
-    public userList(roomId: string) {
+    public userList(roomId: string, token?: string) {
         try {
             let room = this.getRoomOrThrow(roomId);
             return room.peerList;
@@ -29,15 +22,14 @@ export default class Controller {
         }
     }
 
-    public roomList() {
+    public roomList(token?: string) {
         return this.context.rooms.keys();
     }
 
-    public async join(roomId: string, userId: number) {
+    public async join(roomId: string, userId: number, token?: string) {
         let room = this.context.rooms.get(roomId);
         let peer = new Peer(userId);
-        this.context.peers.set(userId, peer);
-        
+
         if (!room) {
             room = new Room(roomId);
             room = await room.init();
@@ -47,7 +39,7 @@ export default class Controller {
         else return room.rtpCapabilities;
     }
 
-    public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, type?: keyof MediaType) {
+    public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, type?: keyof MediaType, token?: string) {
         try {
             let room = this.getRoomOrThrow(roomId);
             let user = this.getUserOrThrow(roomId, userId);
@@ -72,25 +64,27 @@ export default class Controller {
         }
     }
 
-    public async closeTransport(roomId: string, userId: number, transportId: string) {
+    public async closeTransport(roomId: string, userId: number, transportId: string, token?: string) {
         try {
             let user = this.getUserOrThrow(roomId, userId);
             user.closeTransport(transportId);
+            return true;
         } catch (err) {
             throw err;
         }
     }
 
-    public async connectWebRTCTransport(roomId: string, userId: number, transportId: string, dtlsParameters: DtlsParameters) {
+    public async connectWebRTCTransport(roomId: string, userId: number, transportId: string, dtlsParameters: DtlsParameters, token?: string) {
         try {
             let transport = this.getTransportOrThrow(roomId,userId, transportId) as WebRtcTransport;
             transport.connect({dtlsParameters});
+            return true;
         } catch (err) {
             throw err;
         }
     }
 
-    public async send(roomId: string, userId: number, transportId: string, paused: boolean, type: MediaType, kind: MediaKind, rtpParameters: RtpParameters) {
+    public async send(roomId: string, userId: number, transportId: string, paused: boolean, type: MediaType, kind: MediaKind, rtpParameters: RtpParameters, token?: string) {
         try {
             let room = this.getRoomOrThrow(roomId);
             let producer = await room.createProducer(userId, transportId, {
@@ -116,7 +110,7 @@ export default class Controller {
         }
     }
 
-    public async receive(roomId: string, userId: number, transportId: string, mediaPeerId: number, type: MediaType, rtpCapabilities: RtpCapabilities) {
+    public async receive(roomId: string, userId: number, transportId: string, mediaPeerId: number, type: MediaType, rtpCapabilities: RtpCapabilities, token?: string) {
         let room = this.getRoomOrThrow(roomId);
         let mediaPeer = this.getUserOrThrow(roomId, userId);
         let producer: Producer | undefined;
@@ -159,7 +153,7 @@ export default class Controller {
         };
     }
 
-    public async leave(roomId: string, userId: number) {
+    public async leave(roomId: string, userId: number, token?: string) {
         try {
             let room = this.getRoomOrThrow(roomId);
             let user = this.getUserOrThrow(roomId, userId);
@@ -167,72 +161,79 @@ export default class Controller {
             if (room.getNumUser() === 0) {
                 room.close();
             }
+            return true;
         } catch (err) {
             throw err;
         }
     }
 
-    public async closeProducer(roomId: string, userId: number, producerId: string) {
+    public async closeProducer(roomId: string, userId: number, producerId: string, token?: string) {
         try {
             let producer = this.getProducerOrThrow(roomId, userId, producerId);
             if (!producer.closed) {
                 producer.close();
             }
+            return true;
         } catch (err) {
             throw err;
         }
     }
 
-    public async resumeProducer(roomId: string, userId: number, producerId: string) {
+    public async resumeProducer(roomId: string, userId: number, producerId: string, token?: string) {
         try {
             let producer = this.getProducerOrThrow(roomId, userId, producerId);
             if (producer.paused) {
                 producer.resume();
             }
+            return true;
         } catch (err) {
             throw err;
         }
     }
 
-    public async pauseProducer(roomId: string, userId: number, producerId: string) {
+    public async pauseProducer(roomId: string, userId: number, producerId: string, token?: string) {
         try {
             let producer = this.getProducerOrThrow(roomId, userId, producerId);
             if (!producer.paused) {
                 producer.pause();
             }
+            return true;
         } catch (err) {
             throw err;
         }
     }
 
-    public async closeConsumer(roomId: string, userId: number, consumerId: string) {
+    public async closeConsumer(roomId: string, userId: number, consumerId: string, token?: string) {
         try {
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (!consumer.closed) {
                 consumer.close();
             }
+            return true;
         } catch (err)  {
             throw err;
         }
     }
 
-    public async resumeConsumer(roomId: string, userId: number, consumerId: string) {
+    public async resumeConsumer(roomId: string, userId: number, consumerId: string, token?: string) {
         try {
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (consumer.paused) {
                 consumer.resume();
             }
+            return true;
         } catch (err)  {
             throw err;
         }
     }
 
-    public async pauseConsumer(roomId: string, userId: number, consumerId: string) {
+    public async pauseConsumer(roomId: string, userId: number, consumerId: string, token?: string) {
         try {
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (!consumer.paused) {
                 consumer.pause();
             }
+            return true;
         } catch (err)  {
             throw err;
         }

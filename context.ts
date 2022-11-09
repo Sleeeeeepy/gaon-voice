@@ -1,38 +1,49 @@
 import http from "http";
 import https from "https";
-import { Worker } from "mediasoup/node/lib/types";
+import { Worker } from "./worker";
 import { Express } from "express";
 import Room from "./room";
 import Peer from "./peer";
+import Controller from "./controller";
 
-export interface Context {
-    workers?: Array<Worker>;
-    http?: http.Server | https.Server;
-    express?: Express;
-    rooms: Map<string, Room>;
-    peers: Map<number, Peer>;
-    isHttps: boolean;
-}
+export class Context {
+    private readonly _workers?: Array<Worker> | undefined;
+    private readonly _http?: http.Server | https.Server | undefined;
+    private readonly _express?: Express | undefined;
+    private readonly _rooms: Map<string, Room>;
+    private readonly _isHttps: boolean;
+    private readonly _controller: Controller;
 
-export class CurrentContext {
-    private static _context: Context;
-
-    public static getInstance() {
-        if (this._context === null || this._context === undefined) {
-            return {
-                workers: new Array<Worker>(),
-                http: undefined,
-                express: undefined,
-                rooms: new Map<string, Room>(),
-                peers: new Map<number, Peer>(),
-                isHttps: false
-            } as Context;
-            //throw new Error("Empty context");
-        }
-        return this._context;
+    public constructor(workers: Array<Worker>, httpServer: http.Server | https.Server, express: Express) {
+        this._workers = workers;
+        this._http = httpServer;
+        this._express = express;
+        this._rooms = new Map<string, Room>();
+        this._isHttps = httpServer instanceof https.Server;
+        this._controller = new Controller(this);
     }
 
-    //public static set context(context: Context) {
-    //    CurrentContext._context = context;
-    //}
+    public get workers(): Array<Worker> | undefined {
+        return this._workers;
+    }
+
+    public get http(): http.Server | https.Server | undefined {
+        return this._http;
+    }
+
+    public get express(): Express | undefined {
+        return this._express;
+    }
+
+    public get rooms(): Map<string, Room> {
+        return this._rooms;
+    }
+
+    public get isHttps() {
+        return this._isHttps;
+    }
+
+    public get controller() {
+        return this._controller;
+    }
 }
