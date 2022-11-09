@@ -38,18 +38,6 @@ export default class Peer {
         this._audioLevelObservers = audioLevelObserver;
     }
 
-    public canKickOtherUser(): boolean {
-        return false;
-    }
-
-    public canMuteOtherUser(): boolean {
-        return false;
-    }
-
-    public isAdmin(): boolean {
-        return false;        
-    }
-
     public get userId() {
         return this._userId;
     }
