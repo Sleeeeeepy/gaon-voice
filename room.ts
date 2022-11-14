@@ -18,7 +18,7 @@ export default class Room {
     private _router?: Router;
     private _worker?: Worker;
     private _audioLevelObserver?: AudioLevelObserver;
-    private _isInitalized: boolean;
+    private _isInitialized: boolean;
 
     public constructor(roomId: string) {
         this._roomId = roomId;
@@ -27,13 +27,13 @@ export default class Room {
             throw new Error("Failed to create AudioLevelObserver. check the configuration file.")
         }
         this._worker = WorkerManager.getIdleWorker();
-        this._isInitalized = false;
+        this._isInitialized = false;
     }
 
     public async init() {
         let worker = this._worker?.worker;
         if (!worker) {
-            throw new Error("Failed to initalize worker");
+            throw new Error("Failed to initialize worker");
         }
         this._router = await worker.createRouter({mediaCodecs: config.mediaCodecs});
         let observer = await this._router?.createAudioLevelObserver({interval: config.audioLevelObserver.interval});
@@ -41,7 +41,7 @@ export default class Room {
         if (this._worker) {
             WorkerManager.markRunning(this._worker);
         }
-        this._isInitalized = true;
+        this._isInitialized = true;
         return this;
     }
 
@@ -58,7 +58,7 @@ export default class Room {
     }
 
     public async createConsumer(peerId: number, transportId: string, options: ConsumerOptions) {
-        if (!this._isInitalized) throw new Error("room is not initalized."); 
+        if (!this._isInitialized) throw new Error("room is not initialized."); 
         if (!this._router) throw new Error("Failed to create consumer.");
         let peer = this.peers.get(peerId);
         if (!peer) {
@@ -68,7 +68,7 @@ export default class Room {
     }
 
     public async createProducer(peerId: number, transportId: string, options: ProducerOptions) {
-        if (!this._isInitalized) throw new Error("room is not initalized."); 
+        if (!this._isInitialized) throw new Error("room is not initialized."); 
         if (!this._router) throw new Error("Failed to create producer.");
         let peer = this.peers.get(peerId);
         if (!peer) {
@@ -78,7 +78,7 @@ export default class Room {
     }
 
     public async createTransport(peerId: number, kind: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions, appData?: Record<string, unknown>) {
-        if (!this._isInitalized) throw new Error("room is not initalized."); 
+        if (!this._isInitialized) throw new Error("room is not initialized."); 
         if (!this._router) throw new Error("Failed to create transport.");
         let peer = this.peers.get(peerId);
         if (!peer) {
@@ -88,7 +88,7 @@ export default class Room {
     }
 
     public participate(peer: Peer) {
-        if (!this._isInitalized) throw new Error("room is not initalized."); 
+        if (!this._isInitialized) throw new Error("room is not initialized."); 
         this.peers.set(peer.userId, peer);
         peer.onClose = () => {
             this.deletePeer(peer.userId);
@@ -98,7 +98,7 @@ export default class Room {
     }
 
     public disconnect(peerId: number) {
-        if (!this._isInitalized) throw new Error("room is not initalized."); 
+        if (!this._isInitialized) throw new Error("room is not initialized."); 
        let peer = this.peers.get(peerId);
        if (peer) {
             this.deletePeer(peerId);
