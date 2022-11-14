@@ -2,6 +2,7 @@ import { Context } from "./context";
 import { Server, Socket } from 'socket.io';
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
+import { socketPort } from "./config";
 
 export function makeSocket(ctx: Context, svr: Server)  {
     // on connection
@@ -21,14 +22,13 @@ function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
         await ctrl.leave(roomId, userId, token);
     });
 
-    sock.on("join", async (roomId: string, userId: number, token: string) => {
+    sock.on("join", async (roomId: string, userId: number, token: string, callback) => {
         let ret = await ctrl.join(roomId, userId, token);
-        // svr.emit("new_user", {userId: userId});
         await sock.join(roomId);
         sock.broadcast.emit("newUser", {userId: userId});
-        sock.emit("joinRoom", ret);
         sock.data.userId = userId;
         sock.data.roomId = roomId;
+        callback(ret);
     });
 
     sock.on("userList", async (roomId: string, token: string, callback) => {
@@ -37,6 +37,7 @@ function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
             callback(ret);
         } catch (err) {
             callback({error: err});
+            console.log(err);
         }
     });
 
@@ -45,10 +46,13 @@ function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
         callback(ret);
     });
 
+    // TODO: 검증 로직 추가 (이미 해당 유저가 Transport를 가지고 있는 것은 아닌지?)
     sock.on("createSendTransport", async (roomId: string, userId: number, type: any, token: string, callback) => {
         try {
             let ret = await ctrl.createWebRTCTransport(roomId, userId, "Send", type, token);
             callback(ret);
+
+            sock.broadcast.emit("establishNewSendTransport", userId, roomId, type);
         } catch (err) {
             callback({error: err});
             console.log(err);
