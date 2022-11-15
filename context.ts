@@ -13,7 +13,8 @@ export class Context {
     private readonly _rooms: Map<string, Room>;
     private readonly _isHttps: boolean;
     private readonly _controller: Controller;
-
+    private readonly _mobileInvite: Map<number, {roomId: number, userId: number}>;
+    
     public constructor(workers: Array<Worker>, httpServer: http.Server | https.Server, express: Express) {
         this._workers = workers;
         this._http = httpServer;
@@ -21,6 +22,7 @@ export class Context {
         this._rooms = new Map<string, Room>();
         this._isHttps = httpServer instanceof https.Server;
         this._controller = new Controller(this);
+        this._mobileInvite = new Map<number, {roomId: number, userId: number}>();
     }
 
     public get workers(): Array<Worker> | undefined {
@@ -45,5 +47,9 @@ export class Context {
 
     public get controller() {
         return this._controller;
+    }
+
+    public get mobileInvite() {
+        return this._mobileInvite;
     }
 }

@@ -7,9 +7,11 @@ import { Direction, MediaType, PeerResult } from "./type";
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
 import { getChannel, getPermission, getUserToken } from "./database";
+import crypto from "node:crypto";
 
 export default class Controller {
     private context: Context;
+
     public constructor(context: Context) {
         this.context = context;
     }
@@ -179,6 +181,36 @@ export default class Controller {
             kind: consumer.kind,
             mediaType: type
         };
+    }
+
+    public async invitePhone(roomId: string, userId: number, token?: string) {
+        try {
+            let found = false;
+            while (!found) {
+                let random = crypto.randomInt(100_000, 999_999);
+                if (this.context.mobileInvite.has(random))  {
+                    continue;
+                }
+                this.context.mobileInvite.set(random, {roomId: parseInt(roomId), userId: userId});
+                found = true;
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    public async acceptInvite(inviteId: number) {
+        let invite = this.context.mobileInvite.get(inviteId);
+        try {
+            if (!invite) {
+                throw new Error(404, "failed to accept invite.");
+            }
+            
+            let room = this.getRoomOrThrow(invite.roomId.toString());
+            return room.rtpCapabilities;
+        } catch (err) {
+            throw err;
+        }
     }
 
     public async leave(roomId: string, userId: number, token?: string) {
@@ -395,7 +427,6 @@ export default class Controller {
         } catch (err) {
             return false;
         }
-        
     }
 }
 
