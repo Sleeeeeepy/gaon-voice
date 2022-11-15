@@ -3,9 +3,10 @@ import Peer from "./peer";
 import Room from "./room";
 import * as config from "./config";
 import { Producer, WebRtcTransport } from "mediasoup/node/lib/types";
-import { Direction, MediaType } from "./type";
+import { Direction, MediaType, PeerResult } from "./type";
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
+import { getChannel, getPermission, getUserToken } from "./database";
 
 export default class Controller {
     private context: Context;
@@ -13,16 +14,21 @@ export default class Controller {
         this.context = context;
     }
 
-    public userList(roomId: string, token?: string) {
+    public userList(roomId: string) {
         try {
             let room = this.getRoomOrThrow(roomId);
-            return room.peerList;
+            let ret = new Array<PeerResult>();
+            for (let peer of room.peerList) {
+                let result = new PeerResult(peer);
+                ret.push(result);
+            }
+            return ret;
         } catch (err) {
             throw err;
         }
     }
 
-    public roomList(token?: string) {
+    public roomList() {
         return this.context.rooms.keys();
     }
 
@@ -30,7 +36,12 @@ export default class Controller {
         let room = this.context.rooms.get(roomId);
         let peer = new Peer(userId);
 
+        if (!this.auth(userId, token)) {
+            throw new Error(401, "Failed to authentication.");
+        }
+
         if (!room) {
+            //let channel = await getChannel(parseInt(roomId));
             room = new Room(roomId);
             room = await room.init();
             room.participate(peer);
@@ -41,18 +52,23 @@ export default class Controller {
 
     public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, type?: keyof MediaType, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let room = this.getRoomOrThrow(roomId);
             let user = this.getUserOrThrow(roomId, userId);
 
             let transport;
-            if (direction == "Send") {
+            if (direction === "Send") {
                 transport = await room.createTransport(user.userId, "WebRtc", "Send", config.transportSetting) as WebRtcTransport;
-            } else if (direction == "Recv") {
+            } else if (direction === "Recv") {
                 transport = await room.createTransport(user.userId, "WebRtc", "Recv", config.transportSetting) as WebRtcTransport;
             } else {
-                throw new Error(400, "direction is either \"Send\" or \"Recv\"");
+                throw new Error(400, "direction can be either \"Send\" or \"Recv\"");
             }
-
+            transport.appData = {
+                type: type
+            }
             return {
                 transportId: transport.id,
                 iceParameters: transport?.iceParameters,
@@ -66,6 +82,9 @@ export default class Controller {
 
     public async closeTransport(roomId: string, userId: number, transportId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let user = this.getUserOrThrow(roomId, userId);
             user.closeTransport(transportId);
             return true;
@@ -76,6 +95,9 @@ export default class Controller {
 
     public async connectWebRTCTransport(roomId: string, userId: number, transportId: string, dtlsParameters: DtlsParameters, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let transport = this.getTransportOrThrow(roomId,userId, transportId) as WebRtcTransport;
             transport.connect({dtlsParameters});
             return true;
@@ -86,6 +108,9 @@ export default class Controller {
 
     public async send(roomId: string, userId: number, transportId: string, paused: boolean, type: MediaType, kind: MediaKind, rtpParameters: RtpParameters, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let room = this.getRoomOrThrow(roomId);
             let producer = await room.createProducer(userId, transportId, {
                 kind: kind,
@@ -110,12 +135,15 @@ export default class Controller {
         }
     }
 
-    public async receive(roomId: string, userId: number, transportId: string, mediaPeerId: number, type: MediaType, rtpCapabilities: RtpCapabilities, token?: string) {
+    public async receive(roomId: string, userId: number, transportId: string, mediaPeerId: number, type: MediaType, kind: MediaKind, rtpCapabilities: RtpCapabilities, token?: string) {
+        if (!this.auth(userId, token)) {
+            throw new Error(401, "Failed to authentication.");
+        }
         let room = this.getRoomOrThrow(roomId);
-        let mediaPeer = this.getUserOrThrow(roomId, userId);
+        let mediaPeer = this.getUserOrThrow(roomId, mediaPeerId);
         let producer: Producer | undefined;
         mediaPeer.producers.forEach((value, key) => {
-            if (value.appData.type === type) {
+            if (value.appData.type === type && value.kind === kind) {
                 producer = value;
             }
         });
@@ -155,6 +183,9 @@ export default class Controller {
 
     public async leave(roomId: string, userId: number, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let room = this.getRoomOrThrow(roomId);
             let user = this.getUserOrThrow(roomId, userId);
             user.close();
@@ -169,6 +200,9 @@ export default class Controller {
 
     public async closeProducer(roomId: string, userId: number, producerId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let producer = this.getProducerOrThrow(roomId, userId, producerId);
             if (!producer.closed) {
                 producer.close();
@@ -181,6 +215,9 @@ export default class Controller {
 
     public async resumeProducer(roomId: string, userId: number, producerId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let producer = this.getProducerOrThrow(roomId, userId, producerId);
             if (producer.paused) {
                 producer.resume();
@@ -193,6 +230,9 @@ export default class Controller {
 
     public async pauseProducer(roomId: string, userId: number, producerId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let producer = this.getProducerOrThrow(roomId, userId, producerId);
             if (!producer.paused) {
                 producer.pause();
@@ -205,6 +245,9 @@ export default class Controller {
 
     public async closeConsumer(roomId: string, userId: number, consumerId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (!consumer.closed) {
                 consumer.close();
@@ -217,6 +260,9 @@ export default class Controller {
 
     public async resumeConsumer(roomId: string, userId: number, consumerId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (consumer.paused) {
                 consumer.resume();
@@ -229,12 +275,48 @@ export default class Controller {
 
     public async pauseConsumer(roomId: string, userId: number, consumerId: string, token?: string) {
         try {
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (!consumer.paused) {
                 consumer.pause();
             }
             return true;
         } catch (err)  {
+            throw err;
+        }
+    }
+
+    public async kick(roomId: string, adminId: number, victimId: number, adminToken: string) {
+        try {
+            if (!await this.auth(adminId, adminToken)) {
+                throw new Error(401, "Failed to authentication.");
+            }
+
+            if (!await this.permission(adminId, parseInt(roomId))) {
+                throw new Error(401, "Failed to authentication.");
+            }
+
+            let user = this.getUserOrThrow(roomId, victimId);
+            user.close();
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    public async mute(roomId: string, adminId: number, victimId: number, adminToken: string) {
+        try {
+
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    public async unmute(roomId: string, adminId: number, victimId: number, adminToken: string) {
+        try {
+
+        } catch (err) {
             throw err;
         }
     }
@@ -297,6 +379,23 @@ export default class Controller {
         } catch (err)  {
             throw err;
         }
+    }
+
+    private async auth(userId: number, token?: string) {
+        try {
+            return await getUserToken(userId) === token;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    private async permission(userId: number, roomId: number) {
+        try {
+            return await getPermission(userId, roomId);
+        } catch (err) {
+            return false;
+        }
+        
     }
 }
 
