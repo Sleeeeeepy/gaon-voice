@@ -8,11 +8,11 @@ export class WorkerManager {
 
     public static getIdleWorker() {
         if (!this._workerList) {
-            let wlist = this.init();
-            if (wlist.length === 0) {
+            let workerList = this.init();
+            if (workerList.length === 0) {
                 throw new Error("Failed to get idle worker.");
             }
-            return wlist.at(0);
+            return workerList.at(0);
         }
         else if (this._workerList.length === 0) {
             throw new Error("Failed to get idle worker.");
