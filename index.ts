@@ -29,21 +29,21 @@ function configureExpress(exp: Express, ctx: Context) {
     exp.post("/room/:roomId/user/:userId/kick", ExpressController.kick);  
 
     // send information to client for joining.
-    exp.post("/room/:roomId/user/:userId/join", (req, res) => ExpressController.join(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/leave", (req, res) => ExpressController.leave(ctx.controller, req, res)); // OK
-    exp.post("/rooms", (req, res) => ExpressController.roomList(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/users", (req, res) => ExpressController.userList(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/transport/create/:type", (req, res) => ExpressController.createTransport(ctx.controller, req, res)) // OK
-    exp.post("/room/:roomId/user/:userId/transport/:transportId/connect", (req, res) => ExpressController.connect(ctx.controller, req, res)); // OK
+    exp.post("/room/:roomId/user/:userId/join", (req, res) => ExpressController.join(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/leave", (req, res) => ExpressController.leave(ctx.controller, req, res));
+    exp.post("/rooms", (req, res) => ExpressController.roomList(ctx.controller, req, res));
+    exp.post("/room/:roomId/users", (req, res) => ExpressController.userList(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/create/:direction", (req, res) => ExpressController.createTransport(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/connect", (req, res) => ExpressController.connect(ctx.controller, req, res));
     exp.post("/room/:roomId/user/:userId/transport/:transportId/close", (req, res) => ExpressController.closeTransport(ctx.controller, req, res));
-    exp.post("/room/:roomId/user/:userId/transport/:transportId/recv/:mediaPeerId", (req, res) => ExpressController.receive(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/transport/:transportId/send", (req, res) => ExpressController.send(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/consume/:consumerId/pause", (req, res) => ExpressController.pauseConsumer(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/produce/:producerId/pause", (req, res) => ExpressController.pauseProducer(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/consume/:consumerId/resume", (req, res) => ExpressController.resumeConsumer(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/produce/:producerId/resume", (req, res) => ExpressController.resumeProducer(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/consume/:consumerId/close", (req, res) => ExpressController.closeConsumer(ctx.controller, req, res)); // OK
-    exp.post("/room/:roomId/user/:userId/produce/:producerId/close", (req, res) => ExpressController.closeProducer(ctx.controller, req, res)); // OK
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/recv/:mediaPeerId", (req, res) => ExpressController.receive(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/send", (req, res) => ExpressController.send(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/pause", (req, res) => ExpressController.pauseConsumer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/pause", (req, res) => ExpressController.pauseProducer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/resume", (req, res) => ExpressController.resumeConsumer(ctx.controller, req, res)); 
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/resume", (req, res) => ExpressController.resumeProducer(ctx.controller, req, res)); 
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/close", (req, res) => ExpressController.closeConsumer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/close", (req, res) => ExpressController.closeProducer(ctx.controller, req, res));
     
     // heartbeat
     exp.post("/heartbeat/:userId", (req, res) => ExpressController.heartbeat(ctx, req, res));
@@ -58,7 +58,7 @@ function prepareExpress() {
 
 function set_heartbeat(timeout: number, ctx: Context) {
     if (timeout <= 1000) {
-        console.log("heatbeat timeout is too fast.");
+        console.log("heartbeat timeout is too fast.");
         process.exit(-1);
     }
 
@@ -86,14 +86,14 @@ function initializeHttpServer(express: any) {
             }, express);
             return httpServer;
         } catch (err) {
-            console.error("failed to create https server. see below for more informations.\n", err, "\ntrying to create http server...");
+            console.error("failed to create https server. see below for more information.\n", err, "\ntrying to create http server...");
         }
     }
 
     try {
         httpServer = http.createServer(express);
     } catch (err) {
-        console.error("failed to create http server. see below for more informations.\n", err);
+        console.error("failed to create http server. see below for more information.\n", err);
         process.exit(-1);
     }
 
