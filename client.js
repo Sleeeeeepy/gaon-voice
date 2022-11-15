@@ -24,7 +24,7 @@ async function main() {
 }
 
 async function init() {
-    //initalize device and events.
+    //initialize device and events.
     device = new client.Device();
     document.getElementById("btn_join").onclick = () => join(_roomId, _userId);
     document.getElementById("btn_localMedia").onclick = () => startLocalMedia();
@@ -90,12 +90,7 @@ async function createSendTransport(roomId, userId) {
         id: transportId,
         iceCandidates: iceCandidates,
         dtlsParameters: dtlsParameters,
-        iceParameters: iceParameters,
-        iceServers : [{
-            url: 'turn:numb.viagenie.ca',
-            credential: 'muazkh',
-            username: 'webrtc@live.com'
-        }]
+        iceParameters: iceParameters
     });
     _sendTransportId = transportId;
     console.log(transportId, iceParameters, iceCandidates, dtlsParameters);
@@ -134,12 +129,7 @@ async function createRecvTransport(roomId, userId) {
         id: transportId,
         iceCandidates: iceCandidates,
         dtlsParameters: dtlsParameters,
-        iceParameters: iceParameters,
-        iceServers : [{
-            url: 'turn:numb.viagenie.ca',
-            credential: 'muazkh',
-            username: 'webrtc@live.com'
-        }]
+        iceParameters: iceParameters
     });
     _recvTransportId = transportId;
 
@@ -263,7 +253,4 @@ async function HttpRequest(path, body) {
         console.log(err);
         return { err: err};
     }
-}
-function updateView() {
-
 }
