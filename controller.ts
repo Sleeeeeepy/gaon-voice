@@ -335,17 +335,47 @@ export default class Controller {
         }
     }
 
-    public async mute(roomId: string, adminId: number, victimId: number, adminToken: string) {
+    public async mute(roomId: string, adminId: number, victimId: number, type: keyof MediaType, kind: MediaKind, adminToken: string) {
         try {
+            if (!await this.auth(adminId, adminToken)) {
+                throw new Error(401, "Failed to authentication.");
+            }
 
+            if (!await this.permission(adminId, parseInt(roomId))) {
+                throw new Error(401, "Failed to authentication.");
+            }
+
+            let user = this.getUserOrThrow(roomId, victimId);
+            user.producers.forEach((value) => {
+                if (value.appData.type === type && value.appData.kind === kind) {
+                    if (!value.paused) {
+                        value.pause();
+                    }
+                }
+            });
         } catch (err) {
             throw err;
         }
     }
 
-    public async unmute(roomId: string, adminId: number, victimId: number, adminToken: string) {
+    public async unmute(roomId: string, adminId: number, victimId: number, type: keyof MediaType, kind: MediaKind, adminToken: string) {
         try {
+            if (!await this.auth(adminId, adminToken)) {
+                throw new Error(401, "Failed to authentication.");
+            }
 
+            if (!await this.permission(adminId, parseInt(roomId))) {
+                throw new Error(401, "Failed to authentication.");
+            }
+
+            let user = this.getUserOrThrow(roomId, victimId);
+            user.producers.forEach((value) => {
+                if (value.appData.type === type && value.appData.kind === kind) {
+                    if (value.paused) {
+                        value.resume();
+                    }
+                }
+            });
         } catch (err) {
             throw err;
         }
