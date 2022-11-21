@@ -52,7 +52,7 @@ export default class Controller {
         else return room.rtpCapabilities;
     }
 
-    public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, type?: keyof MediaType, token?: string) {
+    public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, token?: string) {
         try {
             if (!this.auth(userId, token)) {
                 throw new Error(401, "Failed to authentication.");
@@ -68,9 +68,7 @@ export default class Controller {
             } else {
                 throw new Error(400, "direction can be either \"Send\" or \"Recv\"");
             }
-            transport.appData = {
-                type: type
-            }
+
             return {
                 transportId: transport.id,
                 iceParameters: transport?.iceParameters,

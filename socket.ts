@@ -37,21 +37,21 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     });
 
     // TODO: 검증 로직 추가 (이미 해당 유저가 Transport를 가지고 있는 것은 아닌지?)
-    sock.on("createSendTransport", async (roomId: string, userId: number, type: any, token: string, callback) => {
+    sock.on("createSendTransport", async (roomId: string, userId: number, token: string, callback) => {
         try {
-            let ret = await ctrl.createWebRTCTransport(roomId, userId, "Send", type, token);
+            let ret = await ctrl.createWebRTCTransport(roomId, userId, "Send", token);
             callback(ret);
 
-            sock.broadcast.emit("establishNewSendTransport", userId, roomId, type);
+            sock.broadcast.emit("establishNewSendTransport", userId, roomId);
         } catch (err) {
             callback({error: err});
             console.log(err);
         }
     });
 
-    sock.on("createRecvTransport", async (roomId: string, userId: number, type: any, token: string, callback) => {
+    sock.on("createRecvTransport", async (roomId: string, userId: number, token: string, callback) => {
         try {
-            let ret = await ctrl.createWebRTCTransport(roomId, userId, "Recv", type, token);
+            let ret = await ctrl.createWebRTCTransport(roomId, userId, "Recv", token);
             callback(ret);
         } catch (err) {
             callback({error: err});
