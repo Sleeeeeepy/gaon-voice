@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express from "express";
 import * as config from "./config";
 import http from "http";
 import https from "https";
@@ -7,15 +7,66 @@ import fs from "node:fs";
 import { configureExpress } from "./express";
 import { WorkerManager } from "./worker";
 import bodyParser from 'body-parser';
+import io from "socket.io";
+import { configureServerSideSocket } from "./socket";
+
 main();
 
 async function main() {
     let workers = WorkerManager.init();
     let express = prepareExpress();
     let httpServer = initializeHttpServer(express);
-    let ctx = new Context(workers, httpServer, express);
+    let socketServer = createSocketIOServer();
+    let socketHttpServer = createSocketIOHttpServer();
+    let ctx = new Context(workers, httpServer, express, socketServer, socketHttpServer);
+
+    // run express server
     configureExpress(express, ctx);
     runHttpServer(ctx);
+
+    // run socket server
+    runSocketIOServer(ctx);
+
+    process.on("SIGINT", handler);
+    function handler(signal: NodeJS.Signals) {
+        console.log("cleaning up WebRTC server...");
+        ctx.http?.close();
+        ctx.socketServer?.close();
+        ctx.socketHttpServer?.close();
+        ctx.rooms.forEach((value) => value.close());
+        ctx.socketServer?.disconnectSockets();
+        console.log("bye");
+        process.exit(0);
+    }
+}
+
+function createSocketIOServer() {
+    let server = new io.Server({connectTimeout: 10000}, {cors: { origin: "*"}});
+    return server;
+}
+
+function createSocketIOHttpServer() {
+    let httpServer = http.createServer();
+    return httpServer;
+}
+
+function runSocketIOServer(ctx: Context) {
+    let server = ctx.socketServer;
+    if (!server) {
+        throw new Error("Failed to run socket server.");
+    }
+
+    server.on("connection", (socket) => {
+        configureServerSideSocket(ctx, server!, socket);
+    });
+
+    let httpServer = ctx.socketHttpServer;
+    if (!httpServer) {
+        throw new Error("Failed to run http server.");
+    }
+    httpServer.listen(config.socketPort, config.socketHost);
+    server.listen(httpServer);
+    console.log(`socket.io server listening on port ${config.socketPort}`);
 }
 
 function prepareExpress() {

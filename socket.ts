@@ -2,18 +2,8 @@ import { Context } from "./context";
 import { Server, Socket } from 'socket.io';
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
-import { socketPort } from "./config";
 
-export function makeSocket(ctx: Context, svr: Server)  {
-    // on connection
-    svr.on("connection", (socket) => {
-        configureServerSideSocket(ctx, svr, socket);
-    });
-
-    return svr;
-}
-
-function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
+export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
     let ctrl = ctx.controller;
     sock.on("disconnect", async () => {
         let token = sock.data.token;

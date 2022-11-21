@@ -3,8 +3,8 @@ import https from "https";
 import { Worker } from "./worker";
 import { Express } from "express";
 import Room from "./room";
-import Peer from "./peer";
 import Controller from "./controller";
+import { Server } from "socket.io";
 
 export class Context {
     private readonly _workers?: Array<Worker> | undefined;
@@ -14,8 +14,10 @@ export class Context {
     private readonly _isHttps: boolean;
     private readonly _controller: Controller;
     private readonly _mobileInvite: Map<number, {roomId: number, userId: number}>;
-    
-    public constructor(workers: Array<Worker>, httpServer: http.Server | https.Server, express: Express) {
+    private readonly _socketServer?: Server | undefined;
+    private readonly _socketHttpServer?: http.Server | https.Server | undefined;
+
+    public constructor(workers: Array<Worker>, httpServer: http.Server | https.Server, express: Express, socketServer: Server, socketHttpServer: http.Server | https.Server) {
         this._workers = workers;
         this._http = httpServer;
         this._express = express;
@@ -51,5 +53,13 @@ export class Context {
 
     public get mobileInvite() {
         return this._mobileInvite;
+    }
+
+    public get socketServer(): Server | undefined {
+        return this._socketServer;
+    }
+
+    public get socketHttpServer(): http.Server | https.Server | undefined {
+        return this._socketHttpServer;
     }
 }
