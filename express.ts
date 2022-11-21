@@ -1,24 +1,18 @@
 import { Request, Response } from "express";
-import Peer from "./peer";
 import * as config from "./config";
-import { DtlsParameters, WebRtcTransport } from "mediasoup/node/lib/WebRtcTransport";
-import Room from "./room";
-import { Producer } from "mediasoup/node/lib/Producer";
 import Controller from "./controller";
 import { Context } from "./context";
 
 export default class ExpressController {
     public static userList(ctrl: Controller, req: Request, res: Response) {
         const { roomId } = req.params;
-        const token = req.headers['x-access-token'] as string;
-        let response = ctrl.userList(roomId, token);
+        let response = ctrl.userList(roomId);
 
         res.status(200).json({peer: [...response]});
     }
 
     public static roomList(ctrl: Controller, req: Request, res: Response) {
-        const token = req.headers['x-access-token'] as string;
-        let response = ctrl.roomList(token);
+        let response = ctrl.roomList();
         res.status(200).json({room: [...response]});
     }
 
@@ -32,13 +26,12 @@ export default class ExpressController {
 
     public static async createTransport(ctrl: Controller, req: Request, res: Response) {
         try {
-            /// TODO: type을 direction으로 수정
-            let { userId, roomId, type, direction } = req.params;
+            let { userId, roomId, direction } = req.params;
             let token = req.headers['x-access-token'] as string;
             //@ts-ignore
-            let response = await ctrl.createWebRTCTransport(roomId, parseInt(userId), type, token);
+            let response = await ctrl.createWebRTCTransport(roomId, parseInt(userId), direction, token);
             res.status(200).json(response);
-            console.log(`===new transport===\nuserId=${userId}}\nroomI=d${roomId}\ntype=${type}\ntransportId=${response.transportId}`);
+            console.log(`===new transport===\nuserId=${userId}}\nroomI=d${roomId}\ntype=${direction}\ntransportId=${response.transportId}`);
         } catch (err) {
             console.log(err);
             res.status(500).json("Failed to create transport.");
@@ -93,9 +86,9 @@ export default class ExpressController {
     public static async receive(ctrl: Controller, req: Request, res: Response) {
         try {
             const { userId, roomId, transportId, mediaPeerId } = req.params;
-            const { type, rtpCapabilities } = req.body;
+            const { type, kind, rtpCapabilities } = req.body;
             const token = req.headers['x-access-token'] as string;
-            let response = await ctrl.receive(roomId, parseInt(userId), transportId, parseInt(mediaPeerId), type, rtpCapabilities, token);
+            let response = await ctrl.receive(roomId, parseInt(userId), transportId, parseInt(mediaPeerId), type, kind, rtpCapabilities, token);
             res.status(200).json(response);
             console.log(`===recv===\nuserId=${userId}\nroomId=${roomId}\ntransportId=${transportId}\ntype=${type}\nkind=${response.kind}\nmediaPeer=${mediaPeerId}`);
         } catch (err) {
@@ -104,28 +97,18 @@ export default class ExpressController {
         }
     }
 
-    public static kick(ctrl: Controller, req: Request, res: Response) {
-        const userId = Number.parseInt(req.params.userId);
+    public static async kick(ctrl: Controller, req: Request, res: Response) {
+        const victimId = Number.parseInt(req.params.userId);
         const roomId = req.params.roomId;
-        let room = new Room("daf");
-        let user;
-        if (!room?.peerList) {
-            res.status(404).json("no room");
-            return;
+        const adminId = Number.parseInt(req.body.adminId);
+        const token = req.headers['x-access-token'] as string;
+        try {
+            await ctrl.kick(roomId, adminId, victimId, token);
+            res.status(200).json({kicked:true});
+        } catch (err) {
+            res.status(500).json(err);
         }
-
-        for (let peer of room?.peerList) {
-            if (peer.userId === userId) {
-                user = peer;
-            }
-        }
-
-        if (!user) {
-            res.status(404).json("no user");
-            return;
-        }
-        // TODO: Vaildation admin
-        room.disconnect(userId);
+        
     }
 
     public static async leave(ctrl: Controller, req: Request, res: Response) {
