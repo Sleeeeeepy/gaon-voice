@@ -2,6 +2,38 @@ import { Request, Response } from "express";
 import * as config from "./config";
 import Controller from "./controller";
 import { Context } from "./context";
+import { Express } from "express";
+
+export function configureExpress(exp: Express, ctx: Context) {
+    exp.get("/", (req, res) => {
+        res.sendFile(__dirname + "/index.html");
+    });
+    exp.get("/client.bundle.js", (req, res) => {
+        res.sendFile(__dirname + "/bundle/client.bundle.js" );
+        console.log(`send dummy client to ${req.ip}`);
+    });
+    exp.post("/room/:roomId/user/:userId/kick", ExpressController.kick);  
+
+    // send information to client for joining.
+    exp.post("/room/:roomId/user/:userId/join", (req, res) => ExpressController.join(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/leave", (req, res) => ExpressController.leave(ctx.controller, req, res));
+    exp.post("/rooms", (req, res) => ExpressController.roomList(ctx.controller, req, res));
+    exp.post("/room/:roomId/users", (req, res) => ExpressController.userList(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/create/:direction", (req, res) => ExpressController.createTransport(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/connect", (req, res) => ExpressController.connect(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/close", (req, res) => ExpressController.closeTransport(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/recv/:mediaPeerId", (req, res) => ExpressController.receive(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/send", (req, res) => ExpressController.send(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/pause", (req, res) => ExpressController.pauseConsumer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/pause", (req, res) => ExpressController.pauseProducer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/resume", (req, res) => ExpressController.resumeConsumer(ctx.controller, req, res)); 
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/resume", (req, res) => ExpressController.resumeProducer(ctx.controller, req, res)); 
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/close", (req, res) => ExpressController.closeConsumer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/close", (req, res) => ExpressController.closeProducer(ctx.controller, req, res));
+    
+    // heartbeat
+    exp.post("/heartbeat/:userId", (req, res) => ExpressController.heartbeat(ctx, req, res));
+}
 
 export default class ExpressController {
     public static userList(ctrl: Controller, req: Request, res: Response) {
