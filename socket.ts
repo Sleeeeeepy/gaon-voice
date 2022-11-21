@@ -6,19 +6,28 @@ import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParamete
 export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
     let ctrl = ctx.controller;
     sock.on("disconnect", async () => {
-        let token = sock.data.token;
-        let userId = sock.data.userId;
-        let roomId = sock.data.roomId;
-        await ctrl.leave(roomId, userId, token);
+        try {
+            let token = sock.data.token;
+            let userId = sock.data.userId;
+            let roomId = sock.data.roomId;
+            await ctrl.leave(roomId, userId, token);
+        } catch (err) {
+            console.log(err);
+        }
     });
 
     sock.on("join", async (roomId: string, userId: number, token: string, callback) => {
-        let ret = await ctrl.join(roomId, userId, token);
-        await sock.join(roomId);
-        sock.broadcast.emit("newUser", {userId: userId});
-        sock.data.userId = userId;
-        sock.data.roomId = roomId;
-        callback(ret);
+        try {
+            let ret = await ctrl.join(roomId, userId, token);
+            await sock.join(roomId);
+            sock.broadcast.emit("newUser", {userId: userId});
+            sock.data.userId = userId;
+            sock.data.roomId = roomId;
+            callback(ret);
+        } catch (err) {
+            callback({error: err});
+            console.log(err);
+        }
     });
 
     sock.on("userList", async (roomId: string, token: string, callback) => {
@@ -32,8 +41,13 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     });
 
     sock.on("roomList", (callback) => {
-        let ret =[...ctrl.roomList()];
-        callback(ret);
+        try {
+            let ret =[...ctrl.roomList()];
+            callback(ret);
+        } catch (err) {
+            callback({error: err});
+            console.log(err);
+        }
     });
 
     // TODO: 검증 로직 추가 (이미 해당 유저가 Transport를 가지고 있는 것은 아닌지?)
