@@ -6,7 +6,6 @@ import { PlainTransport, PlainTransportOptions } from "mediasoup/node/lib/PlainT
 import { Producer, ProducerOptions } from "mediasoup/node/lib/Producer";
 import { Router } from "mediasoup/node/lib/Router";
 import { WebRtcTransport, WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransport";
-import Room from "./room";
 import { Direction, TransportType } from "./type";
 
 export default class Peer {
@@ -15,7 +14,8 @@ export default class Peer {
     private _date: Date;
     private _lastResponse: Date;
     private _rtpCapabilities?: number;
-    private _sendTransports: Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>;
+    private _sendTransport?: DirectTransport | WebRtcTransport | PipeTransport | PlainTransport;
+    private _mobileSendTransport?: DirectTransport | WebRtcTransport | PipeTransport | PlainTransport;
     private _recvTransports: Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>;
     private _producers: Map<string, Producer>;
     private _consumers: Map<string, Consumer>;
@@ -29,7 +29,6 @@ export default class Peer {
         this._ip = ip;
         this._date = new Date(); 
         this._lastResponse = new Date();
-        this._sendTransports = new Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>();
         this._recvTransports = new Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>();
         this._producers = new Map<string, Producer>;
         this._consumers = new Map<string, Consumer>;
@@ -77,10 +76,7 @@ export default class Peer {
         this._token = token;
     }
 
-    public async createTransport(router: Router, kind: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions, appData?: Record<string, unknown>) {
-        if (!transportSetting.appData && appData) {
-            transportSetting.appData = appData;
-        }
+    public async createTransport(router: Router, kind: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions) {
         let transport;
         switch (kind) {
             case "Direct":
@@ -100,7 +96,7 @@ export default class Peer {
         if (direction == "Recv") {
             this._recvTransports.set(transport.id, transport);
         } else if (direction == "Send") {
-            this._sendTransports.set(transport.id, transport);
+            this._sendTransport = transport;
         } else {
             throw new Error("undefined direction.");
         }
@@ -138,7 +134,7 @@ export default class Peer {
     }
 
     public async createProducer(router: Router, transportId: string, options: ProducerOptions) {
-        let transport = this._sendTransports.get(transportId);
+        let transport = this.getTransport(transportId);
         if (!transport) {
             throw new Error(`no such transport ${transportId}`);
         }
@@ -190,10 +186,14 @@ export default class Peer {
     }
 
     public closeTransport(transportId: string) {
-        let transport = this._sendTransports.get(transportId);
+        let transport = this._recvTransports.get(transportId);
         if (transport) {
             transport.close();
-            this._sendTransports.delete(transportId);
+            this._recvTransports.delete(transportId);
+        } else if (this._sendTransport?.id === transportId) {
+            this._sendTransport.close();
+        } else if (this._mobileSendTransport?.id === transportId) {
+            this._mobileSendTransport.close();
         }
     }
 
@@ -224,9 +224,8 @@ export default class Peer {
         //    c.close();
         //});
 
-        this._sendTransports.forEach((t) => {
-            t.close();
-        });
+        this._sendTransport?.close();
+        this._mobileSendTransport?.close();
         
         this._recvTransports.forEach((t) => {
             t.close();
@@ -238,18 +237,9 @@ export default class Peer {
         }
     }
 
-    public getSendTransport(transportId: string) {
-        return this._sendTransports.get(transportId);
-    }
-
-    public getRecvTransport(transportId: string) {
-        return this._recvTransports.get(transportId);
-    }
-
     public getTransport(transportId: string) {
-        let sendTransport = this._sendTransports.get(transportId);
-        if (sendTransport) {
-            return sendTransport;
+        if (this._sendTransport?.id === transportId) {
+            return this._sendTransport;
         }
 
         let recvTransport = this._recvTransports.get(transportId);
@@ -268,8 +258,12 @@ export default class Peer {
         return this._consumers.get(consumerId);
     }
 
-    public get sendTransports() {
-        return this._sendTransports;
+    public get mobileSendTransport() {
+        return this._mobileSendTransport;
+    }
+
+    public get sendTransport() {
+        return this._sendTransport;
     }
 
     public get recvTransports() {
