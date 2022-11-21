@@ -1,72 +1,52 @@
-import express from "express";
+import express, { Express } from "express";
 import * as config from "./config";
 import http from "http";
 import https from "https";
 import { Context } from "./context";
 import fs from "node:fs";
-import { configureExpress } from "./express";
+import ExpressController from "./express";
 import { WorkerManager } from "./worker";
 import bodyParser from 'body-parser';
-import io from "socket.io";
-import { configureServerSideSocket } from "./socket";
-
 main();
 
 async function main() {
     let workers = WorkerManager.init();
     let express = prepareExpress();
     let httpServer = initializeHttpServer(express);
-    let socketServer = createSocketIOServer();
-    let socketHttpServer = createSocketIOHttpServer();
-    let ctx = new Context(workers, httpServer, express, socketServer, socketHttpServer);
-
-    // run express server
+    let ctx = new Context(workers, httpServer, express);
     configureExpress(express, ctx);
     runHttpServer(ctx);
-
-    // run socket server
-    runSocketIOServer(ctx);
-
-    process.on("SIGINT", handler);
-    function handler(signal: NodeJS.Signals) {
-        console.log("cleaning up WebRTC server...");
-        ctx.http?.close();
-        ctx.socketServer?.close();
-        ctx.socketHttpServer?.close();
-        ctx.rooms.forEach((value) => value.close());
-        ctx.socketServer?.disconnectSockets();
-        console.log("bye");
-        process.exit(0);
-    }
 }
 
-function createSocketIOServer() {
-    let server = new io.Server({connectTimeout: 10000}, {cors: { origin: "*"}});
-    return server;
-}
-
-function createSocketIOHttpServer() {
-    let httpServer = http.createServer();
-    return httpServer;
-}
-
-function runSocketIOServer(ctx: Context) {
-    let server = ctx.socketServer;
-    if (!server) {
-        throw new Error("Failed to run socket server.");
-    }
-
-    server.on("connection", (socket) => {
-        configureServerSideSocket(ctx, server!, socket);
+function configureExpress(exp: Express, ctx: Context) {
+    exp.get("/", (req, res) => {
+        res.sendFile(__dirname + "/index.html");
     });
+    exp.get("/client.bundle.js", (req, res) => {
+        res.sendFile(__dirname + "/bundle/client.bundle.js" );
+        console.log(`send dummy client to ${req.ip}`);
+    });
+    exp.post("/room/:roomId/user/:userId/kick", ExpressController.kick);  
 
-    let httpServer = ctx.socketHttpServer;
-    if (!httpServer) {
-        throw new Error("Failed to run http server.");
-    }
-    httpServer.listen(config.socketPort, config.socketHost);
-    server.listen(httpServer);
-    console.log(`socket.io server listening on port ${config.socketPort}`);
+    // send information to client for joining.
+    exp.post("/room/:roomId/user/:userId/join", (req, res) => ExpressController.join(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/leave", (req, res) => ExpressController.leave(ctx.controller, req, res));
+    exp.post("/rooms", (req, res) => ExpressController.roomList(ctx.controller, req, res));
+    exp.post("/room/:roomId/users", (req, res) => ExpressController.userList(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/create/:direction", (req, res) => ExpressController.createTransport(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/connect", (req, res) => ExpressController.connect(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/close", (req, res) => ExpressController.closeTransport(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/recv/:mediaPeerId", (req, res) => ExpressController.receive(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/transport/:transportId/send", (req, res) => ExpressController.send(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/pause", (req, res) => ExpressController.pauseConsumer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/pause", (req, res) => ExpressController.pauseProducer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/resume", (req, res) => ExpressController.resumeConsumer(ctx.controller, req, res)); 
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/resume", (req, res) => ExpressController.resumeProducer(ctx.controller, req, res)); 
+    exp.post("/room/:roomId/user/:userId/consume/:consumerId/close", (req, res) => ExpressController.closeConsumer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/produce/:producerId/close", (req, res) => ExpressController.closeProducer(ctx.controller, req, res));
+    
+    // heartbeat
+    exp.post("/heartbeat/:userId", (req, res) => ExpressController.heartbeat(ctx, req, res));
 }
 
 function prepareExpress() {
