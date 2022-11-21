@@ -25,6 +25,8 @@ export class Context {
         this._isHttps = httpServer instanceof https.Server;
         this._controller = new Controller(this);
         this._mobileInvite = new Map<number, {roomId: number, userId: number}>();
+        this._socketServer = socketServer;
+        this._socketHttpServer = socketHttpServer;
     }
 
     public get workers(): Array<Worker> | undefined {
