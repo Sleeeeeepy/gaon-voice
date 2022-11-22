@@ -1,8 +1,9 @@
 import { Context } from "./context";
 import { Server, Socket } from 'socket.io';
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
-import { RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
+import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
 import { numberOfWorkers } from "./config";
+import { MediaType } from "./type";
 
 export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
     let ctrl = ctx.controller;
@@ -187,6 +188,24 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
         }
     });
 
+    sock.on("mute", async (roomId: string, adminId: number, victimId: number, type: keyof MediaType, kind: MediaKind, adminToken: string, callback) => {
+        try {
+            let ret = await ctrl.mute(roomId, adminId, victimId, type, kind, adminToken);
+            callback({result: true});
+        } catch (err) {
+            callback({result: false});
+        }
+    });
+
+    sock.on("unmute", async (roomId: string, adminId: number, victimId: number, type: keyof MediaType, kind: MediaKind, adminToken: string, callback) => {
+        try {
+            let ret = await ctrl.unmute(roomId, adminId, victimId, type, kind, adminToken);
+            callback({result: true});
+        } catch (err) {
+            callback({result: false});
+        }
+    });
+    
     sock.on("leave", async (roomId: string, userId: number, token: string, callback) => {
         try {
             let ret = await ctrl.leave(roomId, userId, token);
