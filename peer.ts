@@ -10,10 +10,8 @@ import { Direction, TransportType } from "./type";
 
 export default class Peer {
     private _userId: number;
-    private _ip?: string;
     private _date: Date;
     private _lastResponse: Date;
-    private _rtpCapabilities?: number;
     private _sendTransport?: DirectTransport | WebRtcTransport | PipeTransport | PlainTransport;
     private _mobileSendTransport?: DirectTransport | WebRtcTransport | PipeTransport | PlainTransport;
     private _recvTransports: Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>;
@@ -21,32 +19,21 @@ export default class Peer {
     private _consumers: Map<string, Consumer>;
     private _audioLevelObservers?: AudioLevelObserver;
     private _closed: boolean;
-    private _token?: string;
     private _callback?: () => void;
     
-    public constructor(userId: number, ip?: string, token?: string, audioLevelObserver?: AudioLevelObserver) {
+    public constructor(userId: number, audioLevelObserver?: AudioLevelObserver) {
         this._userId = userId;
-        this._ip = ip;
         this._date = new Date(); 
         this._lastResponse = new Date();
         this._recvTransports = new Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>();
         this._producers = new Map<string, Producer>;
         this._consumers = new Map<string, Consumer>;
         this._closed = false;
-        this._token = token;
         this._audioLevelObservers = audioLevelObserver;
     }
 
     public get userId() {
         return this._userId;
-    }
-
-    public get ip() {
-        return this._ip;
-    }
-
-    public get rtpCapabilities() {
-        return this._rtpCapabilities;
     }
 
     public get closed() {
@@ -63,17 +50,6 @@ export default class Peer {
 
     public set lastResponse(date: Date) {
         this._lastResponse = date;
-    }
-
-    public get token() {
-        if (this._token) {
-            return this.token;
-        }
-        else return "";
-    }
-
-    public set token(token: string) {
-        this._token = token;
     }
 
     public async createTransport(router: Router, transportType: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions) {
@@ -96,7 +72,14 @@ export default class Peer {
         if (direction == "Recv") {
             this._recvTransports.set(transport.id, transport);
         } else if (direction == "Send") {
-            this._sendTransport = transport;
+            if (!this._sendTransport) {
+                this._sendTransport = transport;
+            }
+            else if (!this._mobileSendTransport) {
+                this._mobileSendTransport = transport;
+            } else {
+                throw new Error("too many send transport.");
+            }
         } else {
             throw new Error("undefined direction.");
         }
@@ -219,7 +202,7 @@ export default class Peer {
         //this._producers.forEach((p) => {
         //    p.close();
         //});
-//
+
         //this._consumers.forEach((c) => {
         //    c.close();
         //});
