@@ -6,9 +6,8 @@ import { Producer, WebRtcTransport } from "mediasoup/node/lib/types";
 import { Direction, MediaType, PeerResult } from "./type";
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
-import { getChannel, getPermission, getUserToken } from "./database";
 import crypto from "node:crypto";
-
+import { getChannel } from "./httpRequest";
 export default class Controller {
     private context: Context;
 
@@ -43,9 +42,8 @@ export default class Controller {
         }
 
         if (!room) {
-            //let channel = await getChannel(parseInt(roomId));
-            room = new Room(roomId);
-            room = await room.init();
+            let channel = await getChannel(parseInt(roomId));
+            let room = await Room.init(channel);
             room.participate(peer);
             this.context.rooms.set(roomId, room);
             return room.rtpCapabilities;
@@ -452,7 +450,7 @@ export default class Controller {
         //}
     }
 
-    private async permission(userId: number, roomId: number) {
+    private async permission(roomId: number, userId: number) {
         return true;
         //try {
         //    return await getPermission(userId, roomId);

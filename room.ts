@@ -9,7 +9,7 @@ import { WebRtcTransportOptions } from "mediasoup/node/lib/WebRtcTransport";
 import { Worker } from "./worker";
 import * as config from "./config";
 import Peer from "./peer";
-import { Direction, TransportType } from "./type";
+import { Channel, Direction, TransportType } from "./type";
 import { WorkerManager } from "./worker";
 
 export default class Room {
@@ -19,30 +19,37 @@ export default class Room {
     private _worker?: Worker;
     private _audioLevelObserver?: AudioLevelObserver;
     private _isInitialized: boolean;
-
-    public constructor(roomId: string) {
-        this._roomId = roomId;
+    private _channel: Channel;
+    public constructor(channel: Channel) {
+        this._roomId = channel.id.toString();
         this.peers = new Map<number, Peer>();
         if (!config.audioLevelObserver.interval) {
             throw new Error("Failed to create AudioLevelObserver. check the configuration file.")
         }
         this._worker = WorkerManager.getIdleWorker();
         this._isInitialized = false;
+        this._channel = channel;
     }
 
-    public async init() {
-        let worker = this._worker?.worker;
+    public static async init(channel: Channel) {
+        let room = new Room(channel);
+
+        let worker = room._worker?.worker;
         if (!worker) {
             throw new Error("Failed to initialize worker");
         }
-        this._router = await worker.createRouter({mediaCodecs: config.mediaCodecs});
-        let observer = await this._router?.createAudioLevelObserver({interval: config.audioLevelObserver.interval});
-        this._audioLevelObserver = observer;
-        if (this._worker) {
-            WorkerManager.markRunning(this._worker);
+        room._router = await worker.createRouter({mediaCodecs: config.mediaCodecs});
+        let observer = await room._router?.createAudioLevelObserver({interval: config.audioLevelObserver.interval});
+        room._audioLevelObserver = observer;
+        if (room._worker) {
+            WorkerManager.markRunning(room._worker);
         }
-        this._isInitialized = true;
-        return this;
+        room._isInitialized = true;
+        return room;
+    }
+
+    public get projectId() {
+        return this._channel.projectId;
     }
 
     public get router() {
