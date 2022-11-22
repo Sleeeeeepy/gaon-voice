@@ -23,12 +23,16 @@ export interface MediaType {
 
 export class PeerResult {
     public userId: number;
+    public sendTransportId?: string;
+    public mobileSendTransportId?: string;
     public transportIds: Array<string>;
     public producerIds: Array<string>;
     public consumerIds: Array<string>;
 
     public constructor(peer: Peer) {
         this.userId = peer.userId;
+        this.mobileSendTransportId = peer.mobileSendTransport?.id;
+        this.sendTransportId = peer.sendTransport?.id;
         this.transportIds = new Array<string>();
         this.producerIds = new Array<string>();
         this.consumerIds = new Array<string>();
@@ -68,7 +72,7 @@ export class Channel {
         this.maxConnect = maxConnect;
     }
 }
-/*
+
 export class ProjectPermission {
     public id: number;
     public projectId: number;
@@ -82,4 +86,3 @@ export class ProjectPermission {
         this.permission = permission;
     }
 }
-*/
