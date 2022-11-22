@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "cp ./index.html ./dist/index.html && npx webpack && tsc && node ./dist/index.js"
+    "build": "cp ./index.html ./dist/index.html && npx webpack && tsc",
+    "start": "node ./dist/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -15,7 +16,6 @@
     "express": "^4.18.1",
     "mediasoup": "^3.10.8",
     "mediasoup-client": "^3.6.58",
-    "mysql2": "^2.3.3",
     "socket.io": "^4.5.3",
     "socket.io-client": "^4.5.3",
     "webpack": "^5.74.0",
