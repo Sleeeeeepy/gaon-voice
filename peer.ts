@@ -76,9 +76,9 @@ export default class Peer {
         this._token = token;
     }
 
-    public async createTransport(router: Router, kind: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions) {
+    public async createTransport(router: Router, transportType: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions) {
         let transport;
-        switch (kind) {
+        switch (transportType) {
             case "Direct":
                 transport = await router.createDirectTransport(transportSetting as DirectTransportOptions);
                 break;
