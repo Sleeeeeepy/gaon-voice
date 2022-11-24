@@ -73,6 +73,10 @@ export class Worker {
     public get worker() {
         return this._worker;
     }
+
+    public close() {
+        return this._worker.close();
+    }
 }
 
 enum WorkerStatus {

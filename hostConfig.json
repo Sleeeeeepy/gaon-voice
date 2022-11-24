@@ -1,0 +1,15 @@
+{
+    "api": {
+        "host": "http://127.0.0.1:3000"
+    },
+    "socket": {
+        "host": "0.0.0.0",
+        "port": 8081,
+        "cors-origin": "*"
+    },
+    "express": {
+        "host": "0.0.0.0",
+        "port": 8080,
+        "cors-origin": "*"
+    }
+}

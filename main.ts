@@ -1,5 +1,6 @@
 import express from "express";
 import * as config from "./config";
+import * as hostConfig from "./hostConfig.json";
 import http from "http";
 import https from "https";
 import { Context } from "./context";
@@ -33,13 +34,14 @@ export async function main() {
         ctx.socketHttpServer?.close();
         ctx.rooms.forEach((value) => value.close());
         ctx.socketServer?.disconnectSockets();
+        ctx.workers?.forEach((worker) => worker.close());
         console.log("bye");
         process.exit(0);
     }
 }
 
 function createSocketIOServer() {
-    let server = new io.Server({connectTimeout: 10000}, {cors: { origin: "*"}});
+    let server = new io.Server({connectTimeout: 10000}, {cors: {origin: hostConfig.socket["cors-origin"]}});
     return server;
 }
 
@@ -62,9 +64,9 @@ function runSocketIOServer(ctx: Context) {
     if (!httpServer) {
         throw new Error("Failed to run http server.");
     }
-    httpServer.listen(config.socketPort, config.socketHost);
+    httpServer.listen(hostConfig.socket.port, hostConfig.socket.host);
     server.listen(httpServer);
-    console.log(`socket.io server listening on port ${config.socketPort}`);
+    console.log(`socket.io server listening on port ${hostConfig.socket.port}`);
 }
 
 function prepareExpress() {
@@ -123,14 +125,14 @@ function initializeHttpServer(express: any) {
 }
 
 function runHttpServer(ctx: Context) {
-    ctx.http?.listen(config.httpPort, config.httpHost,() => print_server_info(ctx));
-    console.log(`express server is listening on port ${config.httpPort}`);
+    ctx.http?.listen(hostConfig.express.port, hostConfig.express.host,() => print_server_info(ctx));
+    console.log(`express server is listening on port ${hostConfig.express.port}`);
 }
 
 function print_server_info(ctx: Context) {
     console.log(`node version: ${process.versions.node}`);
     console.log(`numWorkers: ${config.numberOfWorkers}`);
-    console.log(`http port: ${config.httpPort}`);
+    console.log(`http port: ${hostConfig.express.port}`);
     console.log(`express protocol: ${ctx.isHttps ? "https" : "http"}`)
-    console.log(`socket port: ${config.socketPort}`);
+    console.log(`socket port: ${hostConfig.socket.port}`);
 }

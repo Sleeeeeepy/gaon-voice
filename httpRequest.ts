@@ -1,23 +1,31 @@
-import * as config from "./api-config.json";
+import * as config from "./hostConfig.json";
 import { Channel, ProjectPermission } from "./type";
 
 export async function getChannel(channelId: number) {
-    let response = await HttpRequest("GET", `/channel/${channelId}`);
-    let channel = response as Channel;
-    if (!channel) {
-        throw new Error("Failed to fetch channel.");
+    try {
+        let response = await HttpRequest("POST", `/channel/${channelId}`);
+        let channel = response as Channel;
+        if (!channel) {
+            throw new Error("Failed to fetch channel.");
+        }
+        return channel;
+    } catch (err) {
+        console.log(err);
     }
-    return channel;
 }
 
 export async function UserAuthentication(userId: number, token: string) {
     try {
-        let response = await HttpRequest("GET", `/auth/`, {userId: userId}, token);
-        let result = response.result;
-        if (result) {
+        let response = await HttpRequest("POST", `/auth/`, {userId: userId}, token);
+        let result = response as Result;
+        if (result.result) {
             return true;
+        } else {
+            if ((response as boolean)) {
+                return true;
+            }
+            return false;
         }
-        return false;
     } catch (err) {
         return false;
     }
@@ -25,7 +33,7 @@ export async function UserAuthentication(userId: number, token: string) {
 
 export async function getPermission(userId: number, projectId: number) {
     try {
-        let response = await HttpRequest("GET", `/project/${projectId}/permission`, {userId: userId});
+        let response = await HttpRequest("POST", `/project/${projectId}/permission`, {userId: userId});
         let result = response as ProjectPermission;
         if (!result) {
             return false;
@@ -45,10 +53,17 @@ async function HttpRequest(method: "GET" | "POST", path: string, body?: any, tok
         };
         let bodyData = JSON.stringify({...body});
         bodyData ??= "";
-        let res = await fetch(host + path, {method: method, body: bodyData, headers: header});
+        let res = await fetch(host + path, {method: method, body: bodyData, headers: header}).catch((reason) => console.log(reason));
         console.log("HTTPRequest[%s]", path, res);
-        return await res.json();
+        if (res) {
+            return await res.json();
+        }
+        return;
     } catch (err) {
         throw err;
     }
+}
+
+interface Result {
+    result: boolean
 }

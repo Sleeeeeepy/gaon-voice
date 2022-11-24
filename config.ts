@@ -40,10 +40,6 @@ export const transportSetting: WebRtcTransportOptions = {
 };
 
 export const numberOfWorkers = os.cpus().length;
-export const httpHost = "0.0.0.0";
-export const httpPort = 8080;
-export const socketHost = "0.0.0.0";
-export const socketPort = 8081;
 export const heartbeatTimeout = 3000;
 export const pingInterval = 1000;
 
