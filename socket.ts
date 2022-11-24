@@ -2,7 +2,6 @@ import { Context } from "./context";
 import { Server, Socket } from 'socket.io';
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
-import { numberOfWorkers } from "./config";
 import { MediaType } from "./type";
 
 export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socket) {
