@@ -193,14 +193,16 @@ export default class Controller {
     public async invitePhone(roomId: string, userId: number, token?: string) {
         try {
             let found = false;
+            let code;
             while (!found) {
-                let random = crypto.randomInt(100_000, 999_999);
-                if (this.context.mobileInvite.has(random))  {
+                code = crypto.randomInt(100_000, 999_999);
+                if (this.context.mobileInvite.has(code))  {
                     continue;
                 }
-                this.context.mobileInvite.set(random, {roomId: parseInt(roomId), userId: userId});
+                this.context.mobileInvite.set(code, {roomId: parseInt(roomId), userId: userId});
                 found = true;
             }
+            return code;
         } catch (err) {
             throw err;
         }

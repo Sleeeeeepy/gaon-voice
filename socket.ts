@@ -217,4 +217,16 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
             console.log(err);
         }
     });
+    
+    sock.on("invitePhone", async (roomId: string, userId: number, token: string, callback) => {
+        try {
+            let ret = await ctrl.invitePhone(roomId, userId, token);
+            if(ret){
+                callback(ret);
+            }
+        } catch (err) {
+            callback(-1);
+            console.log(err);
+        }
+    });
 }
