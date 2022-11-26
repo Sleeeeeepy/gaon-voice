@@ -1,3 +1,4 @@
+import { Consumer, MediaKind, Producer } from "mediasoup/node/lib/types";
 import Peer from "./peer";
 
 export interface TransportType {
@@ -26,28 +27,50 @@ export class PeerResult {
     public sendTransportId?: string;
     public mobileSendTransportId?: string;
     public transportIds: Array<string>;
-    public producerIds: Array<string>;
-    public consumerIds: Array<string>;
+    public producerIds: Array<ProducerResult>;
+    public consumerIds: Array<ConsumerResult>;
 
     public constructor(peer: Peer) {
         this.userId = peer.userId;
         this.mobileSendTransportId = peer.mobileSendTransport?.id;
         this.sendTransportId = peer.sendTransport?.id;
         this.transportIds = new Array<string>();
-        this.producerIds = new Array<string>();
-        this.consumerIds = new Array<string>();
+        this.producerIds = new Array<ProducerResult>();
+        this.consumerIds = new Array<ConsumerResult>();
         
         for (let transport of peer.recvTransports.values()) {
             this.transportIds.push(transport.id);
         }
 
         for (let producer of peer.producers.values()) {
-            this.producerIds.push(producer.id);
+            this.producerIds.push(new ProducerResult(producer));
         }
 
         for (let consumer of peer.consumers.values()) {
-            this.consumerIds.push(consumer.id);
+            this.consumerIds.push(new ConsumerResult(consumer));
         }
+    }
+}
+
+export class ProducerResult {
+    public producerId: string;
+    public type: any;
+    public kind: MediaKind;
+    public constructor(producer: Producer) {
+        this.producerId = producer.id;
+        this.type = producer.appData.type
+        this.kind = producer.kind;
+    }
+}
+
+export class ConsumerResult {
+    public consumerId: string;
+    public type: any;
+    public kind: MediaKind;
+    public constructor(consumer: Consumer) {
+        this.consumerId = consumer.id;
+        this.type = consumer.appData.type
+        this.kind = consumer.kind;
     }
 }
 
