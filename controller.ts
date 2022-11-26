@@ -34,21 +34,30 @@ export default class Controller {
     }
 
     public async join(roomId: string, userId: number, token?: string) {
-        let room = this.context.rooms.get(roomId);
-        let peer = new Peer(userId);
+        try {
+            let room = this.context.rooms.get(roomId);
+            let peer = new Peer(userId);
+    
+            if (!this.auth(userId, token)) {
+                throw new Error(401, "Failed to authentication.");
+            }
+    
+            if (!room) {
+                //let channel = await getChannel(parseInt(roomId));
+                //if (!channel) {
+                //    throw new Error(500, "Failed to create room.");
+                //}
+                let room = await Room.init();
+                room.participate(peer);
+                this.context.rooms.set(roomId, room);
+                return room.rtpCapabilities;
+            }
 
-        if (!this.auth(userId, token)) {
-            throw new Error(401, "Failed to authentication.");
-        }
-
-        if (!room) {
-            let channel = await getChannel(parseInt(roomId));
-            let room = await Room.init(channel);
             room.participate(peer);
-            this.context.rooms.set(roomId, room);
             return room.rtpCapabilities;
+        } catch (err) {
+            console.log(err);
         }
-        else return room.rtpCapabilities;
     }
 
     public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, token?: string) {
@@ -149,7 +158,7 @@ export default class Controller {
         });
 
         if (!producer) {
-            throw new Error(404, `no producer`);
+            throw new Error(404, `no producer type: ${type}, kind:${kind}`);
         }
 
         if (!room.router?.canConsume({

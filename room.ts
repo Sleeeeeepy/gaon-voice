@@ -19,9 +19,9 @@ export default class Room {
     private _worker?: Worker;
     private _audioLevelObserver?: AudioLevelObserver;
     private _isInitialized: boolean;
-    private _channel: Channel;
-    public constructor(channel: Channel) {
-        this._roomId = channel.id.toString();
+    private _channel?: Channel;
+    public constructor(channel?: Channel) {
+        this._roomId = channel?.id.toString() ?? "1";
         this.peers = new Map<number, Peer>();
         if (!config.audioLevelObserver.interval) {
             throw new Error("Failed to create AudioLevelObserver. check the configuration file.")
@@ -31,7 +31,7 @@ export default class Room {
         this._channel = channel;
     }
 
-    public static async init(channel: Channel) {
+    public static async init(channel?: Channel) {
         let room = new Room(channel);
 
         let worker = room._worker?.worker;
@@ -49,7 +49,7 @@ export default class Room {
     }
 
     public get projectId() {
-        return this._channel.projectId;
+        return this._channel?.projectId;
     }
 
     public get router() {

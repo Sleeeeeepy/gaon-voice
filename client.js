@@ -10,7 +10,7 @@ let _sendTransport;
 let _sendTransportId;
 let _recvTransport;
 let _recvTransportId;
-let _roomId = "hi";
+let _roomId = "1";
 let _userId = Math.floor(Math.random() * 0xff);
 let mediaPeer;
 let _prevPeer = new Array();
@@ -107,7 +107,7 @@ async function createSendTransport(roomId, userId) {
 
     _sendTransport.on("produce", async ({kind, rtpParameters}, callback, errback) => {
         try {
-            let {id} = await HttpRequest(`room/${roomId}/user/${userId}/transport/${_sendTransportId}/send`, {kind, rtpParameters, paused: true});
+            let {id} = await HttpRequest(`room/${roomId}/user/${userId}/transport/${_sendTransportId}/send`, {kind, type:"Screen", rtpParameters, paused: true});
             callback({id});
         } catch (err) {
             errback(err);
@@ -154,7 +154,7 @@ async function subscribe(roomId, userId, mediaUserId) {
     }
     let transportId = _recvTransportId;
     console.log(JSON.stringify(device.rtpCapabilities));
-    let param = await HttpRequest(`/room/${roomId}/user/${userId}/transport/${transportId}/recv/${mediaUserId}`, {rtpCapabilities: device.rtpCapabilities});
+    let param = await HttpRequest(`/room/${roomId}/user/${userId}/transport/${transportId}/recv/${mediaUserId}`, {rtpCapabilities: device.rtpCapabilities, type: "Screen", kind: "video"});
     _consumer = await _recvTransport.consume({
         id: param.consumerId,
         producerId: param.producerId,
