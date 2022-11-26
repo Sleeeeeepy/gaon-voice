@@ -21,6 +21,8 @@ export default class Peer {
     private _closed: boolean;
     private _callback?: () => void;
     
+    public mobileInviteCode?: number | undefined;
+
     public constructor(userId: number, audioLevelObserver?: AudioLevelObserver) {
         this._userId = userId;
         this._date = new Date(); 

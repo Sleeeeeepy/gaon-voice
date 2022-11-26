@@ -98,7 +98,7 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     sock.on("sendTransport", async (roomId: string, userId: number, transportId: string, paused: boolean, type: any, kind: any, rtpParameters: RtpParameters, token: string, callback) => {
         try {
             let ret = await ctrl.send(roomId, userId, transportId, paused, type, kind, rtpParameters, token);
-            sock.emit("startSend", userId, type, kind);
+            sock.emit("startProduce", userId, type, kind);
             callback(ret);
         } catch (err) {
             callback({error: err});
@@ -226,6 +226,16 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
             }
         } catch (err) {
             callback(-1);
+            console.log(err);
+        }
+    });
+
+    sock.on("acceptInvite", async (inviteId: number, callback) => {
+        try {
+            let ret = await ctrl.acceptInvite(inviteId);
+            callback(ret);
+        } catch (err) {
+            callback({error: err});
             console.log(err);
         }
     });

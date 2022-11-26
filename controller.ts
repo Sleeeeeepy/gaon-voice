@@ -192,6 +192,11 @@ export default class Controller {
 
     public async invitePhone(roomId: string, userId: number, token?: string) {
         try {
+            let user = this.getUserOrThrow(roomId, userId);
+            if (user.mobileInviteCode) {
+                return user.mobileInviteCode;
+            }
+
             let found = false;
             let code;
             while (!found) {
@@ -216,7 +221,10 @@ export default class Controller {
             }
             
             let room = this.getRoomOrThrow(invite.roomId.toString());
-            return room.rtpCapabilities;
+            this.context.mobileInvite.delete(inviteId);
+            let user = this.getUserOrThrow(invite.roomId.toString(), invite.userId);
+            user.mobileInviteCode = undefined;
+            return {channelName: room.channelName, rtpCapabilities: room.rtpCapabilities};
         } catch (err) {
             throw err;
         }
