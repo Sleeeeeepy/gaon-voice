@@ -88,6 +88,35 @@ export default class Peer {
         return transport;
     }
 
+    public async createMobileTransport(router: Router, transportType: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions) {
+        let transport;
+        switch (transportType) {
+            case "Direct":
+                transport = await router.createDirectTransport(transportSetting as DirectTransportOptions);
+                break;
+            case "Pipe":
+                transport = await router.createPipeTransport(transportSetting as PipeTransportOptions);
+                break;
+            case "Plain":
+                transport = await router.createPlainTransport(transportSetting as PlainTransportOptions);
+                break;
+            case "WebRtc":
+                transport = await router.createWebRtcTransport(transportSetting as WebRtcTransportOptions);
+                break;
+        }
+
+        if (direction == "Recv") {
+            this._recvTransports.set(transport.id, transport);
+        } else if (direction == "Send") {
+            if (!this._mobileSendTransport) {
+                this._mobileSendTransport = transport;
+            }
+        } else {
+            throw new Error("undefined direction.");
+        }
+        return transport;
+    }
+
     public async createConsumer(router: Router, transportId: string, options: ConsumerOptions) {
         let producerId = options.producerId;
         if (!router.canConsume(options)) {

@@ -102,8 +102,19 @@ export default class Room {
         return peer.createTransport(this._router, transportType, direction, transportSetting);
     }
 
+    public async createMobileTransport(peerId: number, transportType: keyof TransportType, direction: keyof Direction, transportSetting: DirectTransportOptions | WebRtcTransportOptions | PipeTransportOptions | PlainTransportOptions) {
+        if (!this._isInitialized) throw new Error("room is not initialized."); 
+        if (!this._router) throw new Error("Failed to create transport.");
+        let peer = this.peers.get(peerId);
+        if (!peer) {
+            throw new Error(`The user ${peerId} does not exist in the room ${this._roomId}.`);
+        }
+        return peer.createMobileTransport(this._router, transportType, direction, transportSetting);
+    }
+    
     public participate(peer: Peer) {
         if (!this._isInitialized) throw new Error("room is not initialized."); 
+        if (this.peers.has(peer.userId)) return;
         this.peers.set(peer.userId, peer);
         peer.onClose = () => {
             this.deletePeer(peer.userId);

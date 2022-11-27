@@ -60,19 +60,40 @@ export default class Controller {
         }
     }
 
-    public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, token?: string) {
+    public async createWebRTCTransport(roomId: string, userId: number, direction: keyof Direction, type: "Mobile" | "Browser", token?: string) {
         try {
-            if (!this.auth(userId, token)) {
-                throw new Error(401, "Failed to authentication.");
-            }
             let room = this.getRoomOrThrow(roomId);
             let user = this.getUserOrThrow(roomId, userId);
             
             let transport;
             if (direction.toLowerCase() === "send") {
-                transport = await room.createTransport(user.userId, "WebRtc", "Send", config.transportSetting) as WebRtcTransport;
+                switch (type) {
+                    case "Browser":
+                        if (!this.auth(userId, token)) {
+                            throw new Error(401, "Failed to authentication.");
+                        }
+                        transport = await room.createTransport(user.userId, "WebRtc", "Send", config.transportSetting) as WebRtcTransport;
+                        break;
+                    case "Mobile":
+                        transport = await room.createMobileTransport(user.userId, "WebRtc", "Send", config.transportSetting) as WebRtcTransport;
+                        break;
+                    default:
+                        throw new Error(400, "type can be either \"Mobile\" or \"Browser\"");
+                }
             } else if (direction.toLowerCase() === "recv") {
-                transport = await room.createTransport(user.userId, "WebRtc", "Recv", config.transportSetting) as WebRtcTransport;
+                switch (type) {
+                    case "Browser":
+                        if (!this.auth(userId, token)) {
+                            throw new Error(401, "Failed to authentication.");
+                        }
+                        transport = await room.createTransport(user.userId, "WebRtc", "Recv", config.transportSetting) as WebRtcTransport;
+                        break;
+                    case "Mobile":
+                        transport = await room.createMobileTransport(user.userId, "WebRtc", "Recv", config.transportSetting) as WebRtcTransport;
+                        break;
+                    default:
+                        throw new Error(400, "type can be either \"Mobile\" or \"Browser\"");
+                }
             } else {
                 throw new Error(400, "direction can be either \"Send\" or \"Recv\"");
             }
@@ -103,9 +124,9 @@ export default class Controller {
 
     public async connectWebRTCTransport(roomId: string, userId: number, transportId: string, dtlsParameters: DtlsParameters, token?: string) {
         try {
-            if (!this.auth(userId, token)) {
-                throw new Error(401, "Failed to authentication.");
-            }
+            //if (!this.auth(userId, token)) {
+            //    throw new Error(401, "Failed to authentication.");
+            //}
             let transport = this.getTransportOrThrow(roomId,userId, transportId) as WebRtcTransport;
             transport.connect({dtlsParameters});
             return true;
@@ -224,7 +245,13 @@ export default class Controller {
             this.context.mobileInvite.delete(inviteId);
             let user = this.getUserOrThrow(invite.roomId.toString(), invite.userId);
             user.mobileInviteCode = undefined;
-            return {channelName: room.channelName, rtpCapabilities: room.rtpCapabilities};
+
+            if (!room) {
+                throw new Error(404, "There is no such room");
+            }
+            room.participate(user);
+
+            return {channelName: room.channelName, rtpCapabilities: room.rtpCapabilities, roomId: invite.roomId, userId: invite.userId};
         } catch (err) {
             throw err;
         }
