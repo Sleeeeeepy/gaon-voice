@@ -256,6 +256,10 @@ export default class Peer {
             return this._sendTransport;
         }
 
+        if (this._mobileSendTransport?.id === transportId) {
+            return this._mobileSendTransport;
+        }
+        
         let recvTransport = this._recvTransports.get(transportId);
         if (recvTransport) {
             return recvTransport;
