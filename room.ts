@@ -20,6 +20,7 @@ export default class Room {
     private _audioLevelObserver?: AudioLevelObserver;
     private _isInitialized: boolean;
     private _channel?: Channel;
+
     public constructor(channel?: Channel) {
         this._roomId = channel?.id.toString() ?? "1";
         this.peers = new Map<number, Peer>();
@@ -48,6 +49,13 @@ export default class Room {
         return room;
     }
 
+    public get channelName() {
+        if (this._channel) {
+            return this._channel.name;
+        }
+        return "undefined";
+    }
+    
     public get projectId() {
         return this._channel?.projectId;
     }
