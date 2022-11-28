@@ -30,6 +30,7 @@ async function init() {
     document.getElementById("btn_localMedia").onclick = () => startLocalMedia();
     document.getElementById("btn_startMedia").onclick = () => startMedia(_roomId, _userId);
     document.getElementById("btn_recv").onclick = () => subscribe(_roomId, _userId);
+    document.getElementById("btn_genCode").onclick = () => generateCode(_roomId, _userId);
     document.getElementById("txt_peer").onkeyup = () => onInputChanged();
 }
 
@@ -51,6 +52,13 @@ async function heartbeat(userId) {
     let { status, interval } = await HttpRequest(`/heartbeat/${userId}`);
     if (interval) {
         _interval = interval;
+    }
+}
+
+async function generateCode(roomId, userId) {
+    let { code } = await HttpRequest(`room/${roomId}/user/${userId}/gencode`);
+    if(code){
+        alert(code);
     }
 }
 

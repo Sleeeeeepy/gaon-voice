@@ -41,7 +41,7 @@ export async function main() {
 }
 
 function createSocketIOServer() {
-    let server = new io.Server({connectTimeout: 10000}, {cors: {origin: hostConfig.socket["cors-origin"]}});
+    let server = new io.Server({connectTimeout: 10000, cors: {origin: hostConfig.socket["cors-origin"]}});
     return server;
 }
 

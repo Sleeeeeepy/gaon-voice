@@ -111,7 +111,7 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
         try {
             let ret = await ctrl.send(roomId, userId, transportId, paused, type, kind, rtpParameters, token);
             sock.emit("startProduce", userId, type, kind);
-            callback(ret);
+            callback(ret.id);
         } catch (err) {
             callback({error: err});
             console.log(err);
@@ -245,6 +245,8 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     sock.on("acceptInvite", async (inviteId: number, callback) => {
         try {
             let ret = await ctrl.acceptInvite(inviteId);
+            sock.data.userId = ret.userId;
+            sock.data.roomId = ret.roomId;
             callback(ret);
         } catch (err) {
             callback({error: err});

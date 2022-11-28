@@ -30,6 +30,7 @@ export function configureExpress(exp: Express, ctx: Context) {
     exp.post("/room/:roomId/user/:userId/produce/:producerId/resume", (req, res) => ExpressController.resumeProducer(ctx.controller, req, res)); 
     exp.post("/room/:roomId/user/:userId/consume/:consumerId/close", (req, res) => ExpressController.closeConsumer(ctx.controller, req, res));
     exp.post("/room/:roomId/user/:userId/produce/:producerId/close", (req, res) => ExpressController.closeProducer(ctx.controller, req, res));
+    exp.post("/room/:roomId/user/:userId/gencode", (req, res) => ExpressController.generateCode(ctx.controller, req, res));
     
     // heartbeat
     exp.post("/heartbeat/:userId", (req, res) => ExpressController.heartbeat(ctx, req, res));
@@ -247,6 +248,19 @@ export default class ExpressController {
         } catch (err) {
             console.log(err);
             res.status(500).json({paused: false});
+        }
+    }
+
+    public static async generateCode(ctrl: Controller, req: Request, res: Response) {
+        let {userId, roomId} = req.params;
+        const token = req.headers['x-access-token'] as string;
+
+        try {
+            let code = await ctrl.invitePhone(roomId, parseInt(userId), token);
+            res.status(200).json({code: code});
+        } catch (err) {
+            console.log(err);
+            res.status(500).json({error: err});
         }
     }
 
