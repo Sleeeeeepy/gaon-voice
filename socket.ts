@@ -11,6 +11,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
             let token = sock.data.token;
             let userId = sock.data.userId;
             let roomId = sock.data.roomId;
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let isMobile = sock.data.type === "Mobile";
             if (isMobile) {
                 await ctrl.closeMobile(roomId, userId);
@@ -25,6 +30,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("join", async (roomId: string, userId: number, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.join(roomId, userId, token);
             await sock.join(roomId);
             sock.broadcast.emit("newUser", {userId: userId});
@@ -40,6 +50,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("silentJoin", async (roomId: string, userId: number, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = ctrl.silentJoin(roomId, userId, token);
             await sock.join(roomId);
             sock.data.userId = userId;
@@ -55,6 +70,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     
     sock.on("userList", async (roomId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = ctrl.userList(roomId);
             callback(ret);
         } catch (err) {
@@ -63,19 +83,24 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
         }
     });
 
-    sock.on("roomList", (callback) => {
-        try {
-            let ret =[...ctrl.roomList()];
-            callback(ret);
-        } catch (err) {
-            callback({error: err});
-            console.log(err);
-        }
-    });
+    // sock.on("roomList", (callback) => {
+    //     try {
+    //         let ret =[...ctrl.roomList()];
+    //         callback(ret);
+    //     } catch (err) {
+    //         callback({error: err});
+    //         console.log(err);
+    //     }
+    // });
 
     // TODO: 검증 로직 추가 (이미 해당 유저가 Transport를 가지고 있는 것은 아닌지?)
     sock.on("createSendTransport", async (roomId: string, userId: number, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.createWebRTCTransport(roomId, userId, "Send", "Browser", token);
             callback(ret);
 
@@ -88,6 +113,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("createRecvTransport", async (roomId: string, userId: number, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.createWebRTCTransport(roomId, userId, "Recv", "Browser", token);
             callback(ret);
         } catch (err) {
@@ -98,6 +128,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("createMobileSendTransport", async (roomId: string, userId: number, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.createWebRTCTransport(roomId, userId, "Send", "Mobile");
             callback(ret);
 
@@ -110,6 +145,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("closeTransport", async (roomId: string, userId: number, transportId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.closeTransport(roomId, userId, transportId, token);
             callback(ret);
         } catch (err) {
@@ -120,6 +160,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("connectTransport", async (roomId: string, userId: number, transportId: string, dtlsParameters: DtlsParameters, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.connectWebRTCTransport(roomId, userId, transportId, dtlsParameters, token);
             callback(ret);
         } catch (err) {
@@ -130,6 +175,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("sendTransport", async (roomId: string, userId: number, transportId: string, paused: boolean, type: any, kind: any, rtpParameters: RtpParameters, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.send(roomId, userId, transportId, paused, type, kind, rtpParameters, token);
             sock.broadcast.emit("startProduce", userId, type, kind);
             callback(ret.id);
@@ -146,6 +196,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("receiveTransport", async (roomId: string, userId: number, transportId: string, mediaPeerId: number, type, kind, rtpCapabilities: RtpCapabilities, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.receive(roomId, userId, transportId, mediaPeerId, type, kind, rtpCapabilities, token);
             callback(ret);
         } catch (err) {
@@ -156,6 +211,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("kick", async (roomId: string, adminId: number, victimId: number, adminToken: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.kick(roomId, adminId, victimId, adminToken);
             sock.broadcast.emit("userLeave", {userId: victimId});
             callback(ret);
@@ -167,6 +227,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("resumeConsumer", async (roomId: string, userId: number, consumerId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.resumeConsumer(roomId, userId, consumerId);
             callback({result: ret});
         } catch (err) {
@@ -177,6 +242,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("pauseConsumer", async (roomId: string, userId: number, consumerId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.pauseConsumer(roomId, userId, consumerId, token);
             callback({result: ret});
         } catch (err) {
@@ -187,6 +257,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("closeConsumer", async (roomId: string, userId: number, consumerId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.closeConsumer(roomId, userId, consumerId, token);
             callback({result: ret});
         } catch (err) {
@@ -197,6 +272,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("resumeProducer", async (roomId: string, userId: number, producerId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.resumeProducer(roomId, userId, producerId, token);
             callback({result: ret});
         } catch (err) {
@@ -207,6 +287,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("pauseProducer", async (roomId: string, userId: number, producerId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.pauseProducer(roomId, userId, producerId, token);
             callback({result: ret});
         } catch (err) {
@@ -217,6 +302,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("closeProducer", async (roomId: string, userId: number, producerId: string, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.closeProducer(roomId, userId, producerId, token);
             callback({result: ret});
         } catch (err) {
@@ -227,6 +317,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("mute", async (roomId: string, adminId: number, victimId: number, type: keyof MediaType, kind: MediaKind, adminToken: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.mute(roomId, adminId, victimId, type, kind, adminToken);
             callback({result: true});
         } catch (err) {
@@ -236,6 +331,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("unmute", async (roomId: string, adminId: number, victimId: number, type: keyof MediaType, kind: MediaKind, adminToken: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.unmute(roomId, adminId, victimId, type, kind, adminToken);
             callback({result: true});
         } catch (err) {
@@ -245,6 +345,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     
     sock.on("leave", async (roomId: string, userId: number, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.leave(roomId, userId, token);
             if (ret) {
                 callback(ret);
@@ -258,6 +363,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     
     sock.on("leaveSignal", async (roomId: string, userId: number) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             console.log(`*** user leave ***\nroomId=${roomId}\nuserId=${userId}`);
             //await ctrl.leave(roomId, userId, "");
             sock.broadcast.emit("userLeave", {userId: userId});
@@ -268,6 +378,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
 
     sock.on("invitePhone", async (roomId: string, userId: number, token: string, callback) => {
         try {
+            if (!roomId) {
+                throw new Error("Invalid parameter roomId");
+            } else {
+                roomId = roomId.toString();
+            }
             let ret = await ctrl.invitePhone(roomId, userId, token);
             if(ret){
                 callback(ret);
