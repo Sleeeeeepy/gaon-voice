@@ -11,6 +11,11 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
             let token = sock.data.token;
             let userId = sock.data.userId;
             let roomId = sock.data.roomId;
+            let isMobile = sock.data.type === "Mobile";
+            if (isMobile) {
+                await ctrl.closeMobile(roomId, userId);
+                return;
+            }
             await ctrl.leave(roomId, userId, token);
             sock.broadcast.emit("userLeave", {userId: userId});
         } catch (err) {
@@ -25,6 +30,7 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
             sock.broadcast.emit("newUser", {userId: userId});
             sock.data.userId = userId;
             sock.data.roomId = roomId;
+            sock.data.type = "PC";
             callback(ret);
         } catch (err) {
             callback({error: err});
@@ -32,9 +38,24 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
         }
     });
 
+    sock.on("silentJoin", async (roomId: string, userId: number, token: string, callback) => {
+        try {
+            let ret = ctrl.silentJoin(roomId, userId, token);
+            await sock.join(roomId);
+            sock.data.userId = userId;
+            sock.data.roomId = roomId;
+            sock.data.type = "PC";
+            sock.data.silence = true;
+            callback(ret);
+        } catch (err) {
+            callback({error: err});
+            console.log(err);
+        }
+    });
+    
     sock.on("userList", async (roomId: string, token: string, callback) => {
         try {
-            let ret = [...ctrl.userList(roomId)];
+            let ret = ctrl.userList(roomId);
             callback(ret);
         } catch (err) {
             callback({error: err});
@@ -110,12 +131,17 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
     sock.on("sendTransport", async (roomId: string, userId: number, transportId: string, paused: boolean, type: any, kind: any, rtpParameters: RtpParameters, token: string, callback) => {
         try {
             let ret = await ctrl.send(roomId, userId, transportId, paused, type, kind, rtpParameters, token);
-            sock.emit("startProduce", userId, type, kind);
+            sock.broadcast.emit("startProduce", userId, type, kind);
             callback(ret.id);
         } catch (err) {
             callback({error: err});
             console.log(err);
         }
+    });
+
+    sock.on("sendSignal", async (userId: number, type: MediaType, kind: MediaKind, callback) => {
+        sock.broadcast.emit("startProduce", userId, type, kind);
+        callback();
     });
 
     sock.on("receiveTransport", async (roomId: string, userId: number, transportId: string, mediaPeerId: number, type, kind, rtpCapabilities: RtpCapabilities, token: string, callback) => {
@@ -230,6 +256,16 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
         }
     });
     
+    sock.on("leaveSignal", async (roomId: string, userId: number) => {
+        try {
+            console.log(`*** user leave ***\nroomId=${roomId}\nuserId=${userId}`);
+            //await ctrl.leave(roomId, userId, "");
+            sock.broadcast.emit("userLeave", {userId: userId});
+        } catch (err) {
+            console.log(err);
+        }
+    });
+
     sock.on("invitePhone", async (roomId: string, userId: number, token: string, callback) => {
         try {
             let ret = await ctrl.invitePhone(roomId, userId, token);
@@ -247,6 +283,7 @@ export function configureServerSideSocket(ctx: Context, svr: Server, sock: Socke
             let ret = await ctrl.acceptInvite(inviteId);
             sock.data.userId = ret.userId;
             sock.data.roomId = ret.roomId;
+            sock.data.type = "Mobile";
             callback(ret);
         } catch (err) {
             callback({error: err});

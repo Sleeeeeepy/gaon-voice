@@ -28,8 +28,8 @@ export default class Peer {
         this._date = new Date(); 
         this._lastResponse = new Date();
         this._recvTransports = new Map<string, DirectTransport | WebRtcTransport | PipeTransport | PlainTransport>();
-        this._producers = new Map<string, Producer>;
-        this._consumers = new Map<string, Consumer>;
+        this._producers = new Map<string, Producer>();
+        this._consumers = new Map<string, Consumer>();
         this._closed = false;
         this._audioLevelObservers = audioLevelObserver;
     }
@@ -199,6 +199,10 @@ export default class Peer {
         }
     }
 
+    public closeMobileTransport() {
+        this._mobileSendTransport?.close();
+    }
+    
     public closeTransport(transportId: string) {
         let transport = this._recvTransports.get(transportId);
         if (transport) {

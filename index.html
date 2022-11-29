@@ -4,16 +4,8 @@
     </head>
     <script type="module" src="./client.bundle.js"></script>
     <body>
-        <button id="btn_join">join room</button>
-        <button id="btn_localMedia">show localMedia</button>
-        <button id="btn_startMedia">start send</button>
-        <input id="txt_peer" type="text"/>
-        <button id="btn_recv">start receive</button>
+        <div id="rtc-root"></div>
         <button id="btn_leave">leave</button>
         <button id="btn_genCode">genCode</button>
-        <p>local</p>
-        <video id="video_local" controls autoplay playsinline width="480" height="270"></video>
-        <p>remote</p>
-        <video id="video_remote" controls autoplay playsinline width="480" height="270"></video>
     </body>
 </html>

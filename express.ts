@@ -41,7 +41,7 @@ export default class ExpressController {
         const { roomId } = req.params;
         let response = ctrl.userList(roomId);
 
-        res.status(200).json({peer: [...response]});
+        res.status(200).json(response);
     }
 
     public static roomList(ctrl: Controller, req: Request, res: Response) {
@@ -55,6 +55,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
         let rtpCapabilities = await ctrl.join(roomId, userId, token);
         res.status(200).json({routerRtpCapabilities: rtpCapabilities});
+        console.log("===join new user===");
     }
 
     public static async createTransport(ctrl: Controller, req: Request, res: Response) {
@@ -62,9 +63,9 @@ export default class ExpressController {
             let { userId, roomId, direction } = req.params;
             let token = req.headers['x-access-token'] as string;
             //@ts-ignore
-            let response = await ctrl.createWebRTCTransport(roomId, parseInt(userId), direction, token);
+            let response = await ctrl.createWebRTCTransport(roomId, parseInt(userId), direction, "Browser", token);
             res.status(200).json(response);
-            console.log(`===new transport===\nuserId=${userId}}\nroomI=d${roomId}\ntype=${direction}\ntransportId=${response.transportId}`);
+            console.log(`===new transport===\nuserId=${userId}\nroomId=${roomId}\ntype=${direction}\ntransportId=${response.transportId}`);
         } catch (err) {
             console.log(err);
             res.status(500).json("Failed to create transport.");
@@ -82,7 +83,7 @@ export default class ExpressController {
         }
         
         
-        console.log(`===close transport===\nuserId=${userId}}\nroomId=${roomId}transportId=${transportId}`);
+        console.log(`===close transport===\nuserId=${userId}\nroomId=${roomId}transportId=${transportId}`);
     }
 
     public static async connect(ctrl: Controller, req: Request, res: Response) {
@@ -92,7 +93,7 @@ export default class ExpressController {
             let token = req.headers['x-access-token'] as string;
             let connected = await ctrl.connectWebRTCTransport(roomId, parseInt(userId), transportId, dtlsParameters, token);
             res.status(200).json({connect: connected});
-            console.log(`===connect transport===\nuserId=${userId}\nroomId=${roomId}transportId=${transportId}`);
+            console.log(`===connect transport===\nuserId=${userId}\nroomId=${roomId}\ntransportId=${transportId}`);
         } catch (err) {
             console.log(err);
             res.status(500).json({connect: false});
@@ -151,6 +152,7 @@ export default class ExpressController {
 
         try {
             let result = await ctrl.leave(roomId, userId, token);
+            console.log(`===user leave===\nroomId=${roomId}\nuserId=${userId}\n`);
             res.status(200).json({leave: result});
         } catch (err) {
             console.log(err);

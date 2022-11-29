@@ -1,5 +1,6 @@
-import { Consumer, MediaKind, Producer } from "mediasoup/node/lib/types";
+import { AudioLevelObserver, Consumer, MediaKind, Producer } from "mediasoup/node/lib/types";
 import Peer from "./peer";
+import Room from "./room";
 
 export interface TransportType {
     Pipe: string;
@@ -15,11 +16,24 @@ export interface Direction {
 
 export interface MediaType {
     Screen: string,
-    ScreenSound: string,
     Camera: string,
     Voice: string,
-    Mobile: string, // unused
-    MobileSound: string
+    Mobile: string // unused
+}
+
+export class RoomState {
+    public roomId: string;
+    public audioLevelObserver?: AudioLevelObserver;
+    public peerList: Array<PeerResult>;
+    
+    public constructor(room: Room) {
+        this.roomId = room.roomId;
+        this.peerList = new Array<PeerResult>();
+        for (let peer of room.peerList) {
+            this.peerList.push(new PeerResult(peer));
+        }
+        this.audioLevelObserver = room.audioLevelObserver;
+    }
 }
 
 export class PeerResult {

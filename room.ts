@@ -118,21 +118,20 @@ export default class Room {
         this.peers.set(peer.userId, peer);
         peer.onClose = () => {
             this.deletePeer(peer.userId);
-            //let ctx = CurrentContext.getInstance();
-            //ctx.peers.delete(peer.userId);
         }
     }
 
     public disconnect(peerId: number) {
         if (!this._isInitialized) throw new Error("room is not initialized."); 
-       let peer = this.peers.get(peerId);
-       if (peer) {
+        let peer = this.peers.get(peerId);
+        if (peer) {
             this.deletePeer(peerId);
-       }
+        }
        
-       if (!peer?.closed) {
+        if (!peer?.closed) {
             peer?.close();  
-       }
+        }
+        console.log(this.peerList);
     }
 
     private deletePeer(peerId: number) {
@@ -153,10 +152,6 @@ export default class Room {
             p.close();
             this.deletePeer(p.userId);
         });
-
-        if (this._router) {
-            this._router.close();    
-        }
 
         if (this._worker) {
             WorkerManager.markIdle(this._worker);
