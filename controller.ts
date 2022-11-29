@@ -470,7 +470,7 @@ export default class Controller {
     }
 
     private getRoomOrThrow(roomId: string) {
-        let room = this.context.rooms.get('1');
+        let room = this.context.rooms.get(roomId);
         if (!room) {
             throw new ControllerError(404, `The room ${roomId} does not exist.`);
         }
