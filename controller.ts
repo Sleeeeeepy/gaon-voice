@@ -3,11 +3,12 @@ import Peer from "./peer";
 import Room from "./room";
 import * as config from "./config";
 import { Producer, WebRtcTransport } from "mediasoup/node/lib/types";
-import { Direction, MediaType, PeerResult } from "./type";
+import { Direction, MediaType, PeerResult, RoomState } from "./type";
 import { DtlsParameters } from "mediasoup-client/lib/Transport";
 import { MediaKind, RtpCapabilities, RtpParameters } from "mediasoup-client/lib/RtpParameters";
 import crypto from "node:crypto";
-import { getChannel } from "./httpRequest";
+import { JavascriptModulesPlugin } from "webpack";
+
 export default class Controller {
     private context: Context;
 
@@ -18,11 +19,7 @@ export default class Controller {
     public userList(roomId: string) {
         try {
             let room = this.getRoomOrThrow(roomId);
-            let ret = new Array<PeerResult>();
-            for (let peer of room.peerList) {
-                let result = new PeerResult(peer);
-                ret.push(result);
-            }
+            let ret = new RoomState(room);
             return ret;
         } catch (err) {
             throw err;
@@ -57,6 +54,23 @@ export default class Controller {
             return room.rtpCapabilities;
         } catch (err) {
             console.log(err);
+        }
+    }
+
+    public async silentJoin(roomId: string, userId: number, token?: string) {
+        try {
+            let room = this.context.rooms.get(roomId);
+            if (!room) {
+                return {result: false, message: `There is no room ${room}.`}
+            }
+
+            let user = room.getUser(userId);
+            if (!user) {
+                return {result: false, message: `Do not call silentJoin before you are in the room.`};
+            }
+            return {result: true};
+        } catch (err) {
+            return {result: false};
         }
     }
 
@@ -180,10 +194,14 @@ export default class Controller {
         if (!this.auth(userId, token)) {
             throw new ControllerError(401, "Failed to authentication.");
         }
+        //let transport = this.getTransportOrThrow(roomId, userId, transportId) as WebRtcTransport;
+        //setInterval(async () => console.log("==== RECV ====\n", await transport.getStats()), 5000);
         let room = this.getRoomOrThrow(roomId);
         let mediaPeer = this.getUserOrThrow(roomId, mediaPeerId);
         let producer: Producer | undefined;
+        //console.log(mediaPeer.producers);
         mediaPeer.producers.forEach((value, key) => {
+            console.log(value.appData);
             if (value.appData.type === type && value.kind === kind) {
                 producer = value;
             }
@@ -192,6 +210,8 @@ export default class Controller {
         if (!producer) {
             throw new ControllerError(404, `no producer type: ${type}, kind:${kind}`);
         }
+
+        console.log(`found producer ${producer.id}`);
 
         if (!room.router?.canConsume({
             producerId: producer.id,
@@ -211,6 +231,7 @@ export default class Controller {
             throw new ControllerError(500, "Failed to create consumer.");
         }
 
+        console.log(`connect producer ${producer.id} to ${consumer.id}`);
         return {
             producerId: producer.id,
             consumerId: consumer.id,
@@ -267,6 +288,15 @@ export default class Controller {
             throw err;
         }
     }
+    
+    public async closeMobile(roomId: string, userId: number) {
+        try {
+            let user = this.getUserOrThrow(roomId, userId);
+            user.closeMobileTransport();
+        } catch (err) {
+            throw err;
+        }
+    }
 
     public async leave(roomId: string, userId: number, token?: string) {
         try {
@@ -274,8 +304,7 @@ export default class Controller {
                 throw new ControllerError(401, "Failed to authentication.");
             }
             let room = this.getRoomOrThrow(roomId);
-            let user = this.getUserOrThrow(roomId, userId);
-            user.close();
+            room.disconnect(userId);
             if (room.size === 0) {
                 room.close();
             }
@@ -352,6 +381,7 @@ export default class Controller {
             }
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (consumer.paused) {
+                console.log("resumeConsumer called")
                 consumer.resume();
             }
             return true;
@@ -367,6 +397,7 @@ export default class Controller {
             }
             let consumer = this.getConsumerOrThrow(roomId, userId, consumerId);
             if (!consumer.paused) {
+                console.log("pauseConsumer called");
                 consumer.pause();
             }
             return true;
