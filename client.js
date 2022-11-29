@@ -276,8 +276,8 @@ export class Context extends EventEmitter {
             }
         });
 
-        this.io.on("userLeave", (userId) => {
-            this.emit('user-leave', userId);
+        this.io.on("userLeave", (response) => {
+            this.emit('user-leave', response.userId);
         });
 
         this.io.on("startProduce", (userId, type, kind) => {
@@ -398,7 +398,10 @@ export class Context extends EventEmitter {
 
             this.producers.set(producer.id, producer);
             console.log(producer.id + " is set.");
-            this.emit('video-produce', producer, mediaType)
+            this.emit('video-produce', producer, mediaType);
+            this.io.emit("sendSignal", this._userId, mediaType, 'video', () => {
+                console.log("send video produce signal");
+            });
         }
 
         if (media.getAudioTracks().length) {
@@ -420,7 +423,10 @@ export class Context extends EventEmitter {
                 }
             }
             this.producers.set(producer.id, producer);
-            this.emit('audio-produce', producer, mediaType)
+            this.emit('audio-produce', producer, mediaType);
+            this.io.emit("sendSignal", this._userId, mediaType, 'audio', () => {
+                console.log("send audio produce signal");
+            });
         }
         return true;
     }
