@@ -39,9 +39,14 @@ export function configureExpress(exp: Express, ctx: Context) {
 export default class ExpressController {
     public static userList(ctrl: Controller, req: Request, res: Response) {
         const { roomId } = req.params;
-        let response = ctrl.userList(roomId);
 
-        res.status(200).json(response);
+        try {
+            let response = ctrl.userList(roomId);
+            res.status(200).json(response);
+        } catch (err) {
+            console.log(err);
+            res.status(500).json("Failed to get userList.");
+        }
     }
 
     public static roomList(ctrl: Controller, req: Request, res: Response) {
@@ -53,10 +58,17 @@ export default class ExpressController {
         const { roomId } = req.params;
         const userId = Number.parseInt(req.params.userId);
         const token = req.headers['x-access-token'] as string;
-        let rtpCapabilities = await ctrl.join(roomId, userId, token);
-        res.status(200).json({routerRtpCapabilities: rtpCapabilities});
-        console.log("===join new user===");
+
+        try {
+            let rtpCapabilities = await ctrl.join(roomId, userId, token);
+            res.status(200).json({routerRtpCapabilities: rtpCapabilities});
+            console.log("===join new user===", rtpCapabilities);
+        } catch (err) {
+            console.log(err);
+            res.status(500).json("Failed to join.");
+        }
     }
+
 
     public static async createTransport(ctrl: Controller, req: Request, res: Response) {
         try {
@@ -180,7 +192,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
 
         try {
-            let closed = ctrl.closeProducer(roomId, parseInt(userId), producerId, token);
+            let closed = await ctrl.closeProducer(roomId, parseInt(userId), producerId, token);
             res.status(200).json({closed: closed});
         } catch (err) {
             console.log(err);
@@ -193,7 +205,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
 
         try {
-            let resumed = ctrl.resumeProducer(roomId, parseInt(userId), producerId, token);
+            let resumed = await ctrl.resumeProducer(roomId, parseInt(userId), producerId, token);
             res.status(200).json({resumed: resumed});
         } catch (err) {
             console.log(err);
@@ -206,7 +218,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
 
         try {
-            let paused = ctrl.pauseProducer(roomId, parseInt(userId), producerId, token);
+            let paused = await ctrl.pauseProducer(roomId, parseInt(userId), producerId, token);
             res.status(200).json({paused: paused});
         } catch (err) {
             console.log(err);
@@ -219,7 +231,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
 
         try {
-            let closed = ctrl.closeConsumer(roomId, parseInt(userId), consumerId, token);
+            let closed = await ctrl.closeConsumer(roomId, parseInt(userId), consumerId, token);
             res.status(200).json({closed: closed});
         } catch (err) {
             console.log(err);
@@ -232,7 +244,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
 
         try {
-            let resumed = ctrl.resumeConsumer(roomId, parseInt(userId), consumerId, token);
+            let resumed = await ctrl.resumeConsumer(roomId, parseInt(userId), consumerId, token);
             res.status(200).json({resumed: resumed});
         } catch (err) {
             console.log(err);
@@ -245,7 +257,7 @@ export default class ExpressController {
         const token = req.headers['x-access-token'] as string;
 
         try {
-            let paused = ctrl.pauseConsumer(roomId, parseInt(userId), consumerId, token);
+            let paused = await ctrl.pauseConsumer(roomId, parseInt(userId), consumerId, token);
             res.status(200).json({paused: paused});
         } catch (err) {
             console.log(err);

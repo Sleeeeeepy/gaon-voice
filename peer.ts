@@ -108,9 +108,7 @@ export default class Peer {
         if (direction == "Recv") {
             this._recvTransports.set(transport.id, transport);
         } else if (direction == "Send") {
-            if (!this._mobileSendTransport) {
-                this._mobileSendTransport = transport;
-            }
+            this._mobileSendTransport = transport;
         } else {
             throw new Error("undefined direction.");
         }
