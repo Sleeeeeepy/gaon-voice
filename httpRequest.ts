@@ -1,5 +1,6 @@
 import * as config from "./hostConfig.json";
 import { Channel, ProjectPermission } from "./type";
+import axios from 'axios';
 
 export async function getChannel(channelId: number) {
     try {
@@ -53,10 +54,11 @@ async function HttpRequest(method: "GET" | "POST", path: string, body?: any, tok
         };
         let bodyData = JSON.stringify({...body});
         bodyData ??= "";
-        let res = await fetch(host + path, {method: method, body: bodyData, headers: header}).catch((reason) => console.log(reason));
+
+        let res = await axios.get(host + path, {data: bodyData, headers: header})
         console.log("HTTPRequest[%s]", path, res);
         if (res) {
-            return await res.json();
+            return res.data
         }
         return;
     } catch (err) {

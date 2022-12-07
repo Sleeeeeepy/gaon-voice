@@ -9,7 +9,8 @@ if (hostConfig.express["cors-origin"] === "*") {
 if (hostConfig.socket["cors-origin"] === "*") {
     console.warn("Cross origin is set to *(Socket.io).");
 }
-if (compareMajor(NodeVer, 19) >= 0) {
+main();
+/*if (compareMajor(NodeVer, 19) >= 0) {
     main();
 } else if (compareMajor(NodeVer, 18) == 0) {
     console.log("if the fetch function does not work, then please enable experimental fetch.");
@@ -17,4 +18,4 @@ if (compareMajor(NodeVer, 19) >= 0) {
 } else {
     console.error("Node version must be at least 18.");
     console.error(`(current version: v${NodeVer})`);
-}
+}*/
